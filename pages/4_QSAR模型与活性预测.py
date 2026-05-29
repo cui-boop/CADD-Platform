@@ -1,8 +1,11 @@
 import os
 import sys
+import hashlib
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+from rdkit import Chem
+from streamlit_ketcher import st_ketcher
 
 # 让 pages 里的文件可以导入 utils
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -29,11 +32,86 @@ st.markdown("""
 并对新的候选分子进行 Active / Inactive 活性预测。
 """)
 
+
+# ============================== 路径设置 ==============================
+
 DATA_PATH = "data/cleaned_activity.csv"
 MODEL_PATH = "models/qsar_random_forest.pkl"
 PREDICTION_PATH = "results/qsar_predictions.csv"
 FEATURE_IMPORTANCE_PATH = "results/feature_importance.csv"
+PARAMETERS_PATH = "results/qsar_model_parameters.csv"
+NEW_MOLECULE_PREDICTION_PATH = "results/new_molecule_qsar_prediction.csv"
 
+
+# ============================== 辅助函数 ==============================
+
+def canonicalize_smiles(smiles):
+    """
+    检查 SMILES 是否有效，并返回标准化 SMILES。
+    如果无效，则返回 None。
+    """
+    if smiles is None or str(smiles).strip() == "":
+        return None
+
+    mol = Chem.MolFromSmiles(str(smiles).strip())
+
+    if mol is None:
+        return None
+
+    return Chem.MolToSmiles(mol)
+
+
+def make_ketcher_key(smiles):
+    """
+    根据输入 SMILES 生成稳定的组件 key。
+    当输入 SMILES 改变时，Ketcher 会重新加载结构。
+    """
+    smiles = str(smiles)
+    return hashlib.md5(smiles.encode("utf-8")).hexdigest()
+
+
+def ensure_feature_columns(desc_df, feature_names):
+    """
+    保证新分子的描述符列与训练模型时的特征列完全一致。
+    缺失列补 0，多余列删除，并按训练时特征顺序排列。
+    """
+    desc_df = desc_df.copy()
+
+    for col in feature_names:
+        if col not in desc_df.columns:
+            desc_df[col] = 0
+
+    desc_df = desc_df[feature_names]
+    desc_df = desc_df.fillna(0)
+
+    return desc_df
+
+
+def explain_feature_meaning(feature_name):
+    """
+    根据常用分子描述符名称，返回对应的药物设计意义解释。
+    如果没有预设解释，则返回通用说明。
+    """
+    explanation_map = {
+        "MolWt": "分子量，反映分子大小，可能影响结合口袋匹配、吸收和成药性。",
+        "LogP": "脂水分配系数，反映分子疏水性，可能影响靶点结合、膜通透性和溶解性。",
+        "TPSA": "拓扑极性表面积，反映分子极性，常与吸收、通透性和氢键能力有关。",
+        "HBD": "氢键供体数量，可能影响蛋白-配体氢键相互作用和膜通透性。",
+        "HBA": "氢键受体数量，可能影响蛋白结合、溶解性和吸收过程。",
+        "RotatableBonds": "可旋转键数量，反映分子柔性，柔性过高可能影响结合构象稳定性。",
+        "HeavyAtomCount": "重原子数量，反映分子规模和结构复杂度。",
+        "RingCount": "环数量，反映分子刚性和骨架特征，可能影响结合构象。",
+        "FractionCSP3": "sp3 碳比例，反映分子三维性，可能影响选择性和成药性。",
+        "NumAromaticRings": "芳香环数量，可能影响疏水相互作用、π-π 相互作用和结合稳定性。"
+    }
+
+    return explanation_map.get(
+        feature_name,
+        "该特征为模型使用的分子描述符，其重要性较高说明它对 Active / Inactive 分类贡献较大。"
+    )
+
+
+# ============================== 1. 读取清洗后的活性数据 ==============================
 
 st.header("1. 读取清洗后的活性数据")
 
@@ -44,7 +122,7 @@ if not os.path.exists(DATA_PATH):
 df = pd.read_csv(DATA_PATH)
 
 st.subheader("数据预览")
-st.dataframe(df.head())
+st.dataframe(df.head(), use_container_width=True)
 
 required_cols = ["compound_id", "smiles", "target", "pactivity", "label"]
 missing_cols = [col for col in required_cols if col not in df.columns]
@@ -56,31 +134,101 @@ if missing_cols:
 st.success(f"成功读取数据，共 {df.shape[0]} 条记录。")
 
 
+# ============================== 2. 计算分子描述符 ==============================
+
 st.header("2. 计算分子描述符")
 
 X, valid_df = build_descriptor_dataframe(df, smiles_col="smiles")
+X = X.fillna(0)
 
 st.write(f"有效分子数量：{X.shape[0]}")
 st.write(f"描述符数量：{X.shape[1]}")
 
-st.dataframe(X.head())
+st.dataframe(X.head(), use_container_width=True)
 
 if X.shape[0] < 10:
-    st.warning("有效样本数较少，模型结果可能不稳定。")
+    st.warning("有效样本数较少，模型结果可能不稳定。建议正式展示时使用更多样本。")
 
+
+# ============================== 3. QSAR 随机森林模型训练 ==============================
 
 st.header("3. QSAR 随机森林模型训练")
+
+st.subheader("模型参数设置")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    test_size = st.slider("测试集比例", 0.1, 0.5, 0.2, 0.05)
+    test_size = st.slider(
+        "测试集比例 test_size",
+        min_value=0.10,
+        max_value=0.50,
+        value=0.20,
+        step=0.05
+    )
 
 with col2:
-    n_estimators = st.slider("随机森林树数量", 50, 500, 200, 50)
+    n_estimators = st.slider(
+        "随机森林树数量 n_estimators",
+        min_value=50,
+        max_value=500,
+        value=250,
+        step=50
+    )
 
 with col3:
-    random_state = st.number_input("随机种子", value=42, step=1)
+    max_depth_option = st.selectbox(
+        "最大树深度 max_depth",
+        ["不限制", 3, 5, 10, 20, 30],
+        index=0
+    )
+
+col4, col5, col6 = st.columns(3)
+
+with col4:
+    max_features = st.slider(
+        "最大特征比例 max_features",
+        min_value=0.10,
+        max_value=1.00,
+        value=0.30,
+        step=0.05
+    )
+
+with col5:
+    min_samples_split = st.slider(
+        "节点最小分裂样本数 min_samples_split",
+        min_value=2,
+        max_value=20,
+        value=2,
+        step=1
+    )
+
+with col6:
+    min_samples_leaf = st.slider(
+        "叶节点最小样本数 min_samples_leaf",
+        min_value=1,
+        max_value=10,
+        value=1,
+        step=1
+    )
+
+random_state = st.number_input(
+    "随机种子 random_state",
+    min_value=0,
+    max_value=9999,
+    value=42,
+    step=1
+)
+
+max_depth = None if max_depth_option == "不限制" else int(max_depth_option)
+
+st.info("""
+本模块采用 Random Forest 分类模型构建 QSAR 活性预测模型。
+用户可以调节测试集比例、随机森林树数量、最大树深度、最大特征比例等参数。
+其中 n_estimators 控制决策树数量，max_depth 控制单棵树复杂度，
+max_features 控制每次分裂时参与选择的特征比例。
+这些参数会影响模型的拟合能力和泛化能力。
+""")
 
 if st.button("开始训练模型"):
     y = valid_df["label"]
@@ -94,12 +242,47 @@ if st.button("开始训练模型"):
         y,
         test_size=test_size,
         random_state=random_state,
-        n_estimators=n_estimators
+        n_estimators=n_estimators,
+        max_depth=max_depth,
+        max_features=max_features,
+        min_samples_split=min_samples_split,
+        min_samples_leaf=min_samples_leaf
     )
+
+    os.makedirs("models", exist_ok=True)
+    os.makedirs("results", exist_ok=True)
 
     save_model(model, list(X.columns), MODEL_PATH)
 
     st.success("模型训练完成")
+
+    params_df = pd.DataFrame({
+        "Parameter": [
+            "test_size",
+            "n_estimators",
+            "max_depth",
+            "max_features",
+            "min_samples_split",
+            "min_samples_leaf",
+            "random_state",
+            "class_weight"
+        ],
+        "Value": [
+            test_size,
+            n_estimators,
+            "None" if max_depth is None else max_depth,
+            max_features,
+            min_samples_split,
+            min_samples_leaf,
+            random_state,
+            "balanced"
+        ]
+    })
+
+    params_df.to_csv(PARAMETERS_PATH, index=False)
+
+    st.subheader("本次模型参数")
+    st.dataframe(params_df, use_container_width=True)
 
     st.subheader("模型性能指标")
 
@@ -108,9 +291,7 @@ if st.button("开始训练模型"):
         columns=["Metric", "Value"]
     )
 
-    st.dataframe(metrics_df)
-
-    os.makedirs("results", exist_ok=True)
+    st.dataframe(metrics_df, use_container_width=True)
     metrics_df.to_csv("results/qsar_metrics.csv", index=False)
 
     st.subheader("混淆矩阵")
@@ -121,7 +302,7 @@ if st.button("开始训练模型"):
         columns=["预测 Inactive", "预测 Active"]
     )
 
-    st.dataframe(cm_df)
+    st.dataframe(cm_df, use_container_width=True)
 
     fig_cm = px.imshow(
         cm_df,
@@ -130,15 +311,28 @@ if st.button("开始训练模型"):
     )
     st.plotly_chart(fig_cm, use_container_width=True)
 
-    st.subheader("特征重要性")
+    st.subheader("模型可解释性分析")
+
+    st.markdown("""
+    本部分基于随机森林模型的全局特征重要性进行解释。
+    重要性越高，说明该分子描述符在模型区分 Active 和 Inactive 分子时贡献越大。
+    需要注意的是，这里的重要性是整个 QSAR 模型层面的解释，
+    不是针对某一个单独候选分子的严格局部解释。
+    """)
 
     importance_df = get_feature_importance(model, list(X.columns))
     importance_df.to_csv(FEATURE_IMPORTANCE_PATH, index=False)
 
-    st.dataframe(importance_df)
+    st.markdown("**全部特征重要性：**")
+    st.dataframe(importance_df, use_container_width=True)
+
+    top_importance_df = importance_df.head(10).copy()
+    top_importance_df["药物设计意义"] = top_importance_df["feature"].apply(
+        explain_feature_meaning
+    )
 
     fig_imp = px.bar(
-        importance_df.head(10),
+        top_importance_df,
         x="importance",
         y="feature",
         orientation="h",
@@ -147,6 +341,20 @@ if st.button("开始训练模型"):
 
     fig_imp.update_layout(yaxis={"categoryorder": "total ascending"})
     st.plotly_chart(fig_imp, use_container_width=True)
+
+    st.markdown("**Top 10 重要特征解释：**")
+    st.dataframe(
+        top_importance_df[["feature", "importance", "药物设计意义"]],
+        use_container_width=True
+    )
+
+    if len(top_importance_df) > 0:
+        top_features = "、".join(top_importance_df["feature"].head(3).tolist())
+        st.info(
+            f"本次 QSAR 模型中，{top_features} 等特征的重要性较高，"
+            "说明模型在进行活性分类时较多依赖这些分子性质。"
+            "这些结果可以为后续候选分子的结构优化提供参考。"
+        )
 
     st.subheader("训练集内全部分子的预测结果")
 
@@ -161,22 +369,63 @@ if st.button("开始训练模型"):
 
     prediction_df.to_csv(PREDICTION_PATH, index=False)
 
-    st.dataframe(prediction_df)
+    st.dataframe(prediction_df, use_container_width=True)
 
     st.success(f"QSAR 预测完成")
 
 
+# ============================== 4. 新分子活性预测 ==============================
+
 st.header("4. 新分子活性预测")
 
 st.markdown("""
-输入一个新的候选分子 SMILES，模型会计算相同描述符，并预测该分子属于 Active 的概率。
+在下方输入候选分子的 SMILES，系统会自动在结构编辑器中显示二维结构。
+用户可以在编辑器中修改分子结构，修改完成后点击编辑器右下角的 **Apply**，
+再点击“预测当前编辑器中的结构”进行活性预测。
 """)
 
-new_smiles = st.text_input("请输入候选分子 SMILES", value="CCOc1ccc(N)cc1")
+default_smiles = "CCOc1ccc(N)cc1"
 
-if st.button("预测新分子活性"):
+input_smiles = st.text_input(
+    "输入分子 SMILES",
+    value=default_smiles,
+    help="SMILES 是分子结构字符串，例如 CCO 表示乙醇。"
+)
+
+canonical_input_smiles = canonicalize_smiles(input_smiles)
+
+if canonical_input_smiles is None:
+    st.error("当前输入的 SMILES 无效，无法加载到结构编辑器。请检查后重新输入。")
+    st.stop()
+
+st.subheader("可交互分子结构编辑器")
+
+ketcher_key = "ketcher_" + make_ketcher_key(canonical_input_smiles)
+
+edited_smiles = st_ketcher(
+    canonical_input_smiles,
+    key=ketcher_key
+)
+
+if edited_smiles is None or str(edited_smiles).strip() == "":
+    current_smiles = canonical_input_smiles
+else:
+    current_smiles = str(edited_smiles).strip()
+
+canonical_current_smiles = canonicalize_smiles(current_smiles)
+
+if canonical_current_smiles is None:
+    st.warning("编辑器中的结构暂时无法转换为有效 SMILES，请检查结构后点击 Apply。")
+    st.stop()
+
+st.session_state["qsar_current_editor_smiles"] = canonical_current_smiles
+
+st.markdown("**当前用于预测的 SMILES：**")
+st.code(canonical_current_smiles)
+
+if st.button("预测当前编辑器中的结构"):
     if not os.path.exists(MODEL_PATH):
-        st.error("尚未找到已训练模型。请先训练模型。")
+        st.error("尚未找到已训练模型。请先在上方完成 QSAR 模型训练。")
         st.stop()
 
     import joblib
@@ -185,14 +434,19 @@ if st.button("预测新分子活性"):
     model = model_package["model"]
     feature_names = model_package["feature_names"]
 
-    desc = calculate_basic_descriptors(new_smiles)
+    predict_smiles = st.session_state.get(
+        "qsar_current_editor_smiles",
+        canonical_current_smiles
+    )
+
+    desc = calculate_basic_descriptors(predict_smiles)
 
     if desc is None:
-        st.error("输入的 SMILES 无效，请检查分子结构。")
+        st.error("无法计算该分子的描述符，请检查 SMILES。")
         st.stop()
 
     desc_df = pd.DataFrame([desc])
-    desc_df = desc_df[feature_names]
+    desc_df = ensure_feature_columns(desc_df, feature_names)
 
     prediction, probability = predict_single_smiles(model, desc_df)
 
@@ -206,4 +460,27 @@ if st.button("预测新分子活性"):
     with col2:
         st.metric("Active 概率", f"{probability:.3f}")
 
-    st.dataframe(desc_df)
+    if prediction == "Active":
+        st.success("该分子被模型预测为潜在活性分子，可进入后续 ADMET 和分子对接分析。")
+    else:
+        st.warning("该分子被模型预测为低活性分子，后续可谨慎考虑。")
+
+    st.subheader("当前分子的描述符")
+    st.dataframe(desc_df, use_container_width=True)
+
+    os.makedirs("results", exist_ok=True)
+
+    new_prediction_df = pd.DataFrame([{
+        "compound_id": "New_Molecule",
+        "smiles": predict_smiles,
+        "target": "User_Input",
+        "qsar_probability": probability,
+        "qsar_prediction": prediction
+    }])
+
+    new_prediction_df.to_csv(
+        NEW_MOLECULE_PREDICTION_PATH,
+        index=False
+    )
+
+    st.success("新分子预测完成")
