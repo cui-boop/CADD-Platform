@@ -1,2 +1,2 @@
 compound_id,smiles,target,qsar_probability,qsar_prediction
-New_Molecule,CCOc1ccc(N)cc1,User_Input,0.304,Inactive
+New_Molecule,CCOc1ccc(N)cc1,User_Input,0.34,Inactive
