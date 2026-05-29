@@ -99,7 +99,7 @@ if st.button("开始训练模型"):
 
     save_model(model, list(X.columns), MODEL_PATH)
 
-    st.success("模型训练完成，并已保存到 models/qsar_random_forest.pkl")
+    st.success("模型训练完成")
 
     st.subheader("模型性能指标")
 
@@ -163,7 +163,7 @@ if st.button("开始训练模型"):
 
     st.dataframe(prediction_df)
 
-    st.success(f"QSAR 预测结果已保存到 {PREDICTION_PATH}")
+    st.success(f"QSAR 预测完成")
 
 
 st.header("4. 新分子活性预测")
