@@ -24,8 +24,8 @@ st.title("🧪 活性数据整理")
 st.markdown(
     """
     本模块用于整理 ChEMBL 或项目标准格式的化合物活性数据。
-    系统会自动识别数据格式，提取化合物 ID、SMILES、靶点、活性类型、
-    活性值和单位，并计算 pActivity，生成 Active / Inactive 标签。
+    支持 ChEMBL 原始导出数据及项目标准格式数据，
+    自动完成字段识别、活性值转换、pActivity 计算与活性标签划分。
     """
 )
 
@@ -35,45 +35,34 @@ st.header("一、数据格式说明")
 
 st.markdown(
     """
-    本页面支持两类数据格式：
+    本页面支持以下数据格式：
 
     **1. ChEMBL 原始导出数据**
 
-    例如从 ChEMBL Activities 页面直接下载的 CSV 文件。常见列包括：
+    ChEMBL Activities 页面导出的原始 CSV 数据，一般包含以下字段：
 
-    - Molecule ChEMBL ID
-    - Smiles
-    - Target Name
-    - Standard Type
-    - Standard Value
-    - Standard Units
-    - Standard Relation
+    Molecule ChEMBL ID ｜ Smiles ｜ Target Name ｜ Standard Type ｜ Standard Value ｜ Standard Units ｜ Standard Relation
 
-    **2. 项目标准格式数据**
+    **2. 项目标准化数据格式**
 
-    也就是已经整理过的数据，至少需要包含：
+    项目内部标准化活性数据，至少需要包含：
 
-    - compound_id
-    - smiles
-    - target
-    - activity_type
-    - activity_value
-    - unit
+    compound_id ｜ smiles ｜ target ｜ activity_type ｜ activity_value ｜ unit
 
-    系统会自动识别上传文件属于哪一种格式。
+    上传后系统将自动识别字段结构并完成格式匹配。
     """
 )
 
 st.info(
     """
-    推荐 ChEMBL 下载筛选条件：
-    Target Type = SINGLE PROTEIN；
-    Organism = Homo sapiens；
-    Standard Type = IC50 或 Ki；
-    Standard Units = nM；
-    Standard Relation = =；
-    Standard Value > 0；
-    Smiles 非空。
+    推荐使用以下 ChEMBL 筛选条件：
+    Target Type：SINGLE PROTEIN  
+    Organism：Homo sapiens  
+    Standard Type：IC50 或 Ki  
+    Standard Units：nM  
+    Standard Relation：=  
+    Standard Value：> 0  
+    Smiles：非空
     """
 )
 
@@ -93,7 +82,7 @@ if data_source == "使用内置 EGFR 示例数据":
 
     if os.path.exists(example_path):
         df = read_activity_csv(example_path)
-        st.success("已读取内置 EGFR ChEMBL 示例数据。")
+        st.success("已加载内置 EGFR ChEMBL 示例数据。")
     else:
         st.error("未找到 data/chembl_egfr_ic50_raw.csv，请检查数据文件是否存在。")
 
@@ -110,10 +99,10 @@ else:
 if df is not None:
     st.header("三、原始数据预览")
 
-    st.write(f"数据行数：{df.shape[0]}")
-    st.write(f"数据列数：{df.shape[1]}")
+    st.write(f"数据记录数：{df.shape[0]}")
+    st.write(f"字段数量：{df.shape[1]}")
 
-    with st.expander("查看原始数据列名"):
+    with st.expander("查看原始字段名"):
         st.write(list(df.columns))
 
     st.dataframe(df.head(20), use_container_width=True)
@@ -123,7 +112,7 @@ if df is not None:
     st.header("四、数据整理参数")
 
     st.info(
-        "系统会自动识别上传文件是 ChEMBL 原始导出数据，还是项目标准格式数据。"
+        "系统会自动识别上传文件是 ChEMBL 原始格式或项目标准格式。"
     )
 
     threshold = st.slider(
@@ -136,12 +125,12 @@ if df is not None:
 
     st.markdown(
         """
-        默认情况下：
+        默认分类规则：
 
         - pActivity ≥ 6：Active
         - pActivity < 6：Inactive
 
-        如果活性单位为 nM，则计算公式为：
+        当活性单位为 nM时，计算公式为：
 
         pActivity = 9 - log10(activity_value)
         """
@@ -154,40 +143,40 @@ if df is not None:
                 threshold=threshold
             )
 
-            st.success("数据整理完成！")
+            st.success("数据整理完成。")
 
             st.divider()
 
-            st.header("五、数据整理统计")
+            st.header("五、整理结果统计")
 
             col1, col2, col3, col4, col5 = st.columns(5)
 
             col1.metric(
-                "识别数据类型",
+                "数据类型",
                 summary.get("识别数据类型", "未知")
             )
 
             col2.metric(
-                "原始记录数",
+                "原始记录",
                 summary.get("原始记录数", 0)
             )
 
             col3.metric(
-                "清洗后分子数",
+                "有效分子",
                 summary.get("清洗后分子数", 0)
             )
 
             col4.metric(
-                "Active 数量",
+                "Active ",
                 summary.get("Active 数量", 0)
             )
 
             col5.metric(
-                "Inactive 数量",
+                "Inactive",
                 summary.get("Inactive 数量", 0)
             )
 
-            st.header("六、清洗后数据预览")
+            st.header("六、清洗后数据")
 
             st.dataframe(
                 cleaned_df.head(50),
@@ -196,17 +185,9 @@ if df is not None:
 
             st.markdown(
                 """
-                清洗后的数据包含以下核心列：
+                清洗后的结果数据包含以下关键字段：
 
-                - compound_id
-                - smiles
-                - target
-                - activity_type
-                - activity_value
-                - unit
-                - pactivity
-                - label
-                - record_count
+                compound_id ｜ smiles ｜ target ｜ activity_type ｜ activity_value ｜ unit ｜ pactivity ｜ label ｜ record_count
                 """
             )
 
@@ -220,7 +201,7 @@ if df is not None:
                 encoding="utf-8-sig"
             )
 
-            st.info(f"清洗后的数据已保存到：{output_path}")
+            st.info(f"结果文件已保存至：{output_path}")
 
             csv_data = cleaned_df.to_csv(index=False).encode("utf-8-sig")
 
@@ -239,17 +220,17 @@ if df is not None:
                 label_counts = cleaned_df["label"].value_counts()
                 st.bar_chart(label_counts)
             else:
-                st.warning("清洗后数据中未找到 label 列。")
+                st.warning("结果中未找到 label 列。")
 
             st.header("八、pActivity 分布")
 
             if "pactivity" in cleaned_df.columns:
                 st.bar_chart(cleaned_df["pactivity"])
             else:
-                st.warning("清洗后数据中未找到 pactivity 列。")
+                st.warning("结果中未找到 pactivity 列。")
 
         except Exception as e:
             st.error(f"数据整理失败：{e}")
 
 else:
-    st.info("请先选择内置数据或上传 CSV 文件。")
+    st.info("请选择示例数据或上传 CSV 文件后继续。")

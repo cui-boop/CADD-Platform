@@ -24,26 +24,21 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("ADMET 预测")
+st.title("💊 ADMET 预测")
 
 st.markdown("""
-本模块用于计算候选药物分子的 ADMET 相关性质，
-包括：
+本模块用于评估候选分子的基础 ADMET 特征，帮助快速判断化合物的成药潜力。
 
-- 分子理化性质
-- Lipinski Rule of Five
-- 药物相似性分析
-- CNS 渗透预测
-- Bioavailability Score
-- PAINS Alert
-- 综合 ADMET Score
+当前支持的分析内容包括：
 
-用于辅助药物筛选与成药性评价。
+分子理化性质 ｜ Lipinski Rule ｜ CNS 渗透趋势 ｜ Bioavailability ｜ PAINS Alert ｜ 综合 ADMET Score
+
+适用于早期化合物筛选、先导优化以及成药性初步评估。
 """)
 
 # ====================== 单分子预测 ======================
 
-st.header("1. 单分子 ADMET 分析")
+st.header("单分子 ADMET 分析")
 
 default_smiles = "CCOc1ccc(N)cc1"
 
@@ -57,12 +52,12 @@ if st.button("开始 ADMET 分析"):
     result = calculate_admet_properties(smiles)
 
     if result is None:
-        st.error("SMILES 无效")
+        st.error("未能识别当前 SMILES，请检查输入格式。")
         st.stop()
 
     # ================= 分子结构图 =================
 
-    st.subheader("二维分子结构")
+    st.subheader("分子结构")
 
     mol = Chem.MolFromSmiles(smiles)
 
@@ -72,7 +67,7 @@ if st.button("开始 ADMET 分析"):
 
     # ================= 指标展示 =================
 
-    st.subheader("关键性质指标")
+    st.subheader("核心指标")
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -90,7 +85,7 @@ if st.button("开始 ADMET 分析"):
 
     # ================= 全部性质 =================
 
-    st.subheader("完整 ADMET 属性")
+    st.subheader("完整属性结果")
 
     result_df = pd.DataFrame([result])
 
@@ -101,7 +96,7 @@ if st.button("开始 ADMET 分析"):
 
     # ================= 雷达图 =================
 
-    st.subheader("ADMET Radar")
+    st.subheader("ADMET Profile")
 
     radar_categories = [
         "MolWt",
@@ -146,7 +141,7 @@ if st.button("开始 ADMET 分析"):
 
     # ================= Lipinski =================
 
-    st.subheader("Lipinski Rule Analysis")
+    st.subheader("Lipinski Rule")
 
     lipinski_df = pd.DataFrame({
         "Rule": [
@@ -170,46 +165,52 @@ if st.button("开始 ADMET 分析"):
 
     # ================= 药物化学解释 =================
 
-    st.subheader("药物化学解释")
+    st.subheader("指标说明")
 
     st.info(f"""
-    • MolWt = {result["MolWt"]}：
-    分子量影响吸收、分布和口服利用度。
+MolWt = {result["MolWt"]}
 
-    • LogP = {result["LogP"]}：
-    LogP 反映疏水性，影响膜通透性和溶解性。
+分子量通常与吸收效率、组织分布及口服利用度相关。
 
-    • TPSA = {result["TPSA"]}：
-    TPSA 与细胞膜通透能力相关。
+LogP = {result["LogP"]}
 
-    • CNS Permeability：
-    当前预测结果为 {result["CNS_Permeability"]}
+LogP 反映分子的脂溶性，对膜通透性和溶解行为有较大影响。
 
-    • PAINS Alert：
-    当前结果为 {result["PAINS_Alert"]}
+TPSA = {result["TPSA"]}
 
-    • ADMET Score：
-    综合评分为 {result["ADMET_Score"]}
-    """)
+TPSA 常用于评估分子的极性及跨膜能力。
+
+CNS Permeability = {result["CNS_Permeability"]}
+
+用于反映分子穿越血脑屏障的潜在能力。
+
+PAINS Alert = {result["PAINS_Alert"]}
+
+用于识别可能导致假阳性的结构片段。
+
+ADMET Score = {result["ADMET_Score"]}
+
+综合反映当前分子的整体成药趋势。
+""")
 
     # ================= 成药性评价 =================
 
-    st.subheader("成药性综合评价")
+    st.subheader("综合评价")
 
     score = result["ADMET_Score"]
 
     if score >= 0.85:
-        st.success("该分子具有优秀成药性，建议进入后续分子对接分析。")
+        st.success("该分子整体表现较好，可进一步开展对接或后续优化分析。")
 
     elif score >= 0.65:
-        st.warning("该分子具有中等成药性，可进一步优化。")
+        st.warning("该分子具备一定成药潜力，部分性质仍有优化空间。")
 
     else:
-        st.error("该分子成药性较弱。")
+        st.error("当前分子的综合成药性相对有限。")
 
 # ====================== 批量预测 ======================
 
-st.header("2. 批量 ADMET 分析")
+st.header("批量 ADMET 分析")
 
 uploaded_file = st.file_uploader(
     "上传包含 smiles 列的 CSV 文件",
@@ -221,51 +222,82 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
 
     if "smiles" not in df.columns:
-        st.error("CSV 必须包含 smiles 列")
+        st.error("CSV 文件中未检测到 smiles 列。")
         st.stop()
 
-    result_df = batch_calculate_admet(
-        df["smiles"].tolist()
-    )
+    st.success(f"已读取 {len(df)} 条分子记录。")
 
-    st.subheader("批量预测结果")
+    if st.button("开始批量分析"):
 
-    st.dataframe(
-        result_df,
-        use_container_width=True
-    )
+        progress_bar = st.progress(0)
 
-    st.subheader("ADMET Score 分布")
+        status_text = st.empty()
 
-    fig = px.histogram(
-        result_df,
-        x="ADMET_Score",
-        nbins=20,
-        title="ADMET Score Distribution"
-    )
+        status_text.info("正在进行 ADMET 批量计算，请稍候...")
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+        smiles_list = df["smiles"].tolist()
 
-    st.subheader("Top Candidate Molecules")
+        result_list = []
 
-    top_df = result_df.sort_values(
-        "ADMET_Score",
-        ascending=False
-    ).head(10)
+        total = len(smiles_list)
 
-    st.dataframe(
-        top_df,
-        use_container_width=True
-    )
+        for idx, smi in enumerate(smiles_list):
 
-    os.makedirs("results", exist_ok=True)
+            result = calculate_admet_properties(smi)
 
-    result_df.to_csv(
-        "results/admet_prediction_results.csv",
-        index=False
-    )
+            if result is not None:
+                result_list.append(result)
 
-    st.success("批量 ADMET 分析完成")
+            progress = (idx + 1) / total
+
+            progress_bar.progress(progress)
+
+            status_text.info(
+                f"正在分析第 {idx + 1} / {total} 个分子"
+            )
+
+        result_df = pd.DataFrame(result_list)
+
+        status_text.success("批量分析完成。")
+
+        st.subheader("批量预测结果")
+
+        st.dataframe(
+            result_df,
+            use_container_width=True
+        )
+
+        st.subheader("ADMET Score 分布")
+
+        fig = px.histogram(
+            result_df,
+            x="ADMET_Score",
+            nbins=20,
+            title="ADMET Score Distribution"
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+        st.subheader("Top Candidate Molecules")
+
+        top_df = result_df.sort_values(
+            "ADMET_Score",
+            ascending=False
+        ).head(10)
+
+        st.dataframe(
+            top_df,
+            use_container_width=True
+        )
+
+        os.makedirs("results", exist_ok=True)
+
+        result_df.to_csv(
+            "results/admet_prediction_results.csv",
+            index=False
+        )
+
+        st.success("结果已保存至 results/admet_prediction_results.csv")

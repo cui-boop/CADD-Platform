@@ -14,34 +14,32 @@ from utils.docking import (
 
 
 st.set_page_config(
-    page_title="分子对接结果智能解释",
+    page_title="分子对接结果分析",
     page_icon="🧬",
     layout="wide"
 )
 
-st.title("🧬 分子对接结果智能解释与多靶点比较")
+st.title("🧬 分子对接结果分析")
 
 st.markdown("""
-本模块不再只是展示 docking score，而是进一步分析候选分子的结合模式和多靶点作用潜力。
+本模块用于整理和分析分子对接结果，帮助快速查看候选分子的结合表现、多靶点趋势以及潜在优化方向。
 
-模块包含两个核心功能：
+除了基础 docking score 外，当前页面还会结合氢键、疏水作用、π-π 相互作用、盐桥及关键残基等信息， 
+进一步生成 docking confidence，并给出对应的结合模式解释与结构优化建议。
 
-1. **对接结果智能解释**：综合 docking score、氢键、疏水作用、π-π 作用、盐桥和关键残基，计算 `docking_confidence`，并自动生成结合模式解释和结构优化建议。
-2. **同一候选分子的多靶点比较**：比较同一个分子在 EGFR、HER2、BACE1 等不同靶点上的 docking score 和 docking confidence，帮助判断靶点偏好、多靶点潜力和药物重定位价值。
-
-演示数据不包含 `pose_file` 或构象图片文件，避免出现 `CHEMBL3808884_BACE1_pose.png` 这类图片无法获取的问题。后续如果你们自己用 PyMOL、Discovery Studio 等工具生成了真实构象图片，可以再自行增加图片列。
+适用于： 分子筛选、多靶点比较、药物重定位分析、对接结果整理、结合模式解释。
 """)
 
-st.subheader("1. 输入文件格式要求")
+st.subheader("1. 输入数据格式")
 
 st.markdown("""
-最少需要包含：
+最低需要包含以下字段：
 
 ```text
 compound_id,target,docking_score
 ```
 
-推荐完整格式：
+推荐使用完整字段：
 
 ```text
 compound_id,smiles,target,docking_score,hbond_count,hydrophobic_count,pi_pi_count,salt_bridge_count,key_residues,interaction
@@ -63,18 +61,18 @@ compound_id,smiles,target,docking_score,hbond_count,hydrophobic_count,pi_pi_coun
 
 template_df = make_smart_docking_template()
 
-with st.expander("查看智能 docking_results.csv 模板"):
+with st.expander("查看 docking_results.csv 示例模板"):
     st.dataframe(template_df, use_container_width=True)
 
 template_csv = template_df.to_csv(index=False, encoding="utf-8-sig")
 st.download_button(
-    label="📥 下载智能 docking_results.csv 模板",
+    label="下载 docking_results.csv 模板",
     data=template_csv,
     file_name="smart_docking_results_template.csv",
     mime="text/csv"
 )
 
-st.subheader("2. 选择数据来源")
+st.subheader("2. 数据来源")
 
 mode = st.radio(
     "请选择数据来源",
@@ -92,17 +90,17 @@ if mode == "上传 docking_results.csv":
             docking_df = load_docking_csv(uploaded_file)
             docking_df = analyze_docking_results(docking_df)
             save_path = save_docking_results(docking_df, output_path="results/docking_results.csv")
-            st.success(f"对接结果读取成功，已保存到：{save_path}")
+            st.success(f"数据处理完成，结果已保存到：{save_path}")
         except Exception as e:
             st.error(f"文件处理失败：{e}")
     else:
-        st.warning("请上传 docking_results.csv，或者选择“使用演示数据”。")
+        st.warning("上传 docking_results.csv，或选择“使用演示数据”后即可开始分析。")
 
 else:
     docking_df = make_smart_docking_template()
     docking_df = analyze_docking_results(docking_df)
     save_path = save_docking_results(docking_df, output_path="results/docking_results.csv")
-    st.success(f"已加载演示数据，并保存到：{save_path}")
+    st.success(f"演示数据加载完成，演示结果已保存到：{save_path}")
 
 if docking_df is not None and not docking_df.empty:
 
@@ -133,9 +131,9 @@ if docking_df is not None and not docking_df.empty:
             best_conf = docking_df.sort_values("docking_confidence", ascending=False).iloc[0]
             st.metric("最高 docking confidence", f"{best_conf['docking_confidence']:.3f}")
 
-        st.subheader("4. Docking score 排名图")
+        st.subheader("4. Docking score 排名")
         targets = ["全部靶点"] + sorted(docking_df["target"].dropna().astype(str).unique().tolist())
-        selected_target = st.selectbox("选择要展示的靶点", targets)
+        selected_target = st.selectbox("选择展示靶点", targets)
         plot_target = None if selected_target == "全部靶点" else selected_target
 
         try:
@@ -145,17 +143,17 @@ if docking_df is not None and not docking_df.empty:
                 output_path="results/docking_score_plot.png"
             )
             st.pyplot(fig)
-            st.caption(f"图像已保存到：{fig_path}")
+            st.caption(f"图像已保存至：{fig_path}")
         except Exception as e:
             st.error(f"绘图失败：{e}")
 
         st.info("""
-        说明：docking score 越低通常表示结合能越有利；但 docking score 不能单独代表结合模式是否合理。
-        因此本模块进一步引入 docking confidence，对相互作用类型和数量进行综合评价。
+        Docking score 越低通常表示结合能越有利，但单独依赖 docking score 往往不足以完整反映结合质量。
+        因此本模块进一步引入结合氢键、疏水作用及关键残基等信息，对整体结合可信度进行综合评估。
         """)
 
     with tab2:
-        st.subheader("5. 对接结果智能解释")
+        st.subheader("5. Docking智能解释")
 
         view_cols = [
             "compound_id",
@@ -183,7 +181,7 @@ if docking_df is not None and not docking_df.empty:
             use_container_width=True
         )
 
-        st.subheader("6. 单个分子的解释详情")
+        st.subheader("6. 单分子解释详情")
 
         selected_compound = st.selectbox(
             "选择 compound_id 查看解释",
@@ -210,9 +208,9 @@ if docking_df is not None and not docking_df.empty:
         st.markdown("""
         多靶点比较可以帮助判断：
 
-        - 某个分子是否对多个靶点都有较低 docking score；
-        - 某个分子是否对特定靶点具有更强结合偏好；
-        - 是否存在潜在的多靶点抑制或药物重定位价值。
+        - 某个分子是否对多个靶点都保持良好的结合趋势；
+        - 是否对特定靶点具有更强结合偏好；
+        - 是否具备潜在的多靶点抑制或药物重定位价值。
         """)
 
         st.subheader("8. 多靶点 docking score 热图")
@@ -222,7 +220,7 @@ if docking_df is not None and not docking_df.empty:
                 output_path="results/multi_target_docking_heatmap.png"
             )
             st.pyplot(heatmap_fig)
-            st.caption(f"图像已保存到：{heatmap_path}")
+            st.caption(f"图像已保存至：{heatmap_path}")
         except Exception as e:
             st.error(f"热图绘制失败：{e}")
 
@@ -233,7 +231,7 @@ if docking_df is not None and not docking_df.empty:
                 output_path="results/docking_confidence_by_target.png"
             )
             st.pyplot(conf_fig)
-            st.caption(f"图像已保存到：{conf_path}")
+            st.caption(f"图像已保存至：{conf_path}")
         except Exception as e:
             st.error(f"confidence 图绘制失败：{e}")
 
