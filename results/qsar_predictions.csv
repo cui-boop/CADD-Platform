@@ -1,0 +1,13 @@
+compound_id,smiles,target,qsar_probability,qsar_prediction
+C001,CCOc1ccc(N)cc1,EGFR,0.98,Active
+C002,CCN(CC)CC,BACE1,0.08,Inactive
+C003,CC(C)Oc1ccccc1,EGFR,0.875,Active
+C004,CCO,JAK2,0.035,Inactive
+C005,c1ccccc1,EGFR,0.13,Inactive
+C006,CCOc1ccc(O)cc1,EGFR,0.99,Active
+C007,CCN(CC)C(=O)c1ccccc1,BACE1,0.94,Active
+C008,CCCCCCCC,JAK2,0.325,Inactive
+C009,CC(C)NCC(O)c1ccccc1,EGFR,0.98,Active
+C010,CCOC(=O)c1ccccc1,BACE1,0.985,Active
+C011,CC(C)CC(N)C(=O)O,JAK2,0.905,Active
+C012,CC(C)(C)O,EGFR,0.045,Inactive
