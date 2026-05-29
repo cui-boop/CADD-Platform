@@ -1,7 +1,4 @@
 ﻿compound_id,smiles,target,docking_score,pose_file,interaction
-C001,CCOc1ccc(N)cc1,EGFR,-9.2,C001_pose.png,H-bond: MET793; hydrophobic: LEU718
-C002,CCN(CC)CC,EGFR,-7.4,C002_pose.png,H-bond: LYS745
-C003,CCOC(=O)c1ccccc1,EGFR,-6.1,C003_pose.png,hydrophobic: VAL726
-C004,COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1,EGFR,-10.3,C004_pose.png,H-bond: MET793; pi-pi: PHE856
-C005,CC(C)NCC(O)COc1ccc(CC(N)=O)cc1,EGFR,-8.0,C005_pose.png,H-bond: ASP855; hydrophobic: LEU844
-C006,Cn1cnc2c1c(=O)n(C)c(=O)n2C,EGFR,-5.4,C006_pose.png,weak hydrophobic interaction
+C001,CCOc1ccc(N)cc1,EGFR,-9.2,C001_pose.png,H-bond: MET793; hydrophobic interaction
+C002,CCN(CC)CC,EGFR,-8.1,C002_pose.png,H-bond: LYS745
+C003,CCOC(=O)c1ccccc1,EGFR,-6.7,C003_pose.png,hydrophobic interaction

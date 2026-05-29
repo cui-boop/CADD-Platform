@@ -1,5 +1,3 @@
-# pages/10_结果报告生成.py
-
 import streamlit as st
 import pandas as pd
 from pathlib import Path
@@ -10,6 +8,12 @@ from utils.report import (
     generate_html_report
 )
 
+
+st.set_page_config(
+    page_title="结果报告生成",
+    page_icon="📄",
+    layout="wide"
+)
 
 st.title("📄 结果报告生成")
 
@@ -60,7 +64,7 @@ else:
 if final_df is not None:
     st.subheader("3. 生成报告")
 
-    if st.button("生成 Markdown / HTML 报告"):
+    if st.button("生成 Markdown / HTML 报告", type="primary"):
         try:
             report_text = generate_markdown_report(
                 final_df=final_df,
@@ -72,14 +76,14 @@ if final_df is not None:
             md_path = save_markdown_report(report_text)
             html_path = generate_html_report(report_text)
 
-            st.success(f"报告生成成功：{md_path}")
+            st.success(f"Markdown 报告生成成功：{md_path}")
             st.success(f"HTML 报告生成成功：{html_path}")
 
             st.subheader("报告预览")
             st.markdown(report_text)
 
             st.download_button(
-                label="下载 Markdown 报告",
+                label="📥 下载 Markdown 报告",
                 data=report_text,
                 file_name="cadd_report.md",
                 mime="text/markdown"
@@ -89,7 +93,7 @@ if final_df is not None:
                 html_data = f.read()
 
             st.download_button(
-                label="下载 HTML 报告",
+                label="📥 下载 HTML 报告",
                 data=html_data,
                 file_name="cadd_report.html",
                 mime="text/html"
