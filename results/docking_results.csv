@@ -1,0 +1,4 @@
+﻿compound_id,smiles,target,docking_score,pose_file,interaction
+C001,CCOc1ccc(N)cc1,EGFR,-9.2,C001_pose.png,H-bond: MET793; hydrophobic interaction
+C002,CCN(CC)CC,EGFR,-8.1,C002_pose.png,H-bond: LYS745
+C003,CCOC(=O)c1ccccc1,EGFR,-6.7,C003_pose.png,hydrophobic interaction

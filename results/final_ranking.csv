@@ -1,0 +1,4 @@
+﻿compound_id,smiles,target,qsar_probability,admet_score,docking_score,docking_score_norm,total_score,recommendation,final_rank
+C001,CCOc1ccc(N)cc1,EGFR,0.86,0.85,-9.2,0.84,0.851,高推荐,1
+C002,CCN(CC)CC,EGFR,0.62,0.78,-8.1,0.62,0.668,中等推荐,2
+C003,CCOC(=O)c1ccccc1,EGFR,0.35,0.7,-6.7,0.34,0.452,低推荐,3
