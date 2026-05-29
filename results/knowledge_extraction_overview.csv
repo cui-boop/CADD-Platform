@@ -1,0 +1,8 @@
+﻿字段,内容
+研究主题,"Quantum chemical modeling, molecular docking, and ADMET evaluation of imidazole phenothiazine hybrids."
+提取模式,规则提取
+总结,识别到靶点：AChE、ALK、CYP2D6、CYP3A4、CYP450、EGFR、hERG、Mpro、PARP1、VEGFR、VEGFR2 识别到候选化合物：Nicotinib、Axitinib、Sunitinib、Erlotinib、Nilotinib、afatinib、osimertinib、compound N 文本包含 ADMET 相关信息。 文本包含 docking 或结合模式信息。
+靶点,AChE; ALK; CYP2D6; CYP3A4; CYP450; EGFR; hERG; Mpro; PARP1; VEGFR; VEGFR2
+疾病背景,breast cancer; cancer; toxicity; tumor
+候选化合物,Nicotinib; Axitinib; Sunitinib; Erlotinib; Nilotinib; afatinib; osimertinib; compound N
+关键残基,ALA433; ALA451; ALA698; ALA719; ARG418; ARG431; ARG779; ARG817; ASN421; ASN818; ASP776; ASP813; ASP831; CYS773; GLN767; GLU545; GLY416; GLY441; GLY447; GLY695; GLY697; GLY700; GLY772; HIS415; ILE425; ILE432; ILE448; LEU430; LEU694; LEU768; LEU775; LEU820; LYS456; LYS721; MET443; MET769; PHE450; PHE699; PRO434; PRO438; PRO770; SER417; SER457; SER696; THR766; THR830; TRP414; TYR442; TYR449; TYR460; VAL702

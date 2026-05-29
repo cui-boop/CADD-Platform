@@ -1,0 +1,9 @@
+Discovery of EGFR kinase inhibitors with improved docking interactions and ADMET profiles
+
+Epidermal growth factor receptor EGFR is an important therapeutic target in non-small cell lung cancer.
+Several quinazoline derivatives were designed as EGFR tyrosine kinase inhibitors.
+Compound A showed potent inhibitory activity with an IC50 of 18 nM against EGFR, while compound B showed an IC50 of 95 nM.
+Molecular docking suggested that compound A formed a hydrogen bond with MET793 and hydrophobic interactions with LEU718 and VAL726 in the ATP-binding pocket.
+The binding affinity of compound A was estimated as -9.6 kcal/mol.
+ADMET evaluation indicated acceptable solubility and moderate CYP3A4 inhibition risk.
+The quinazoline core may be retained, while polar substituents can be optimized to improve solubility and reduce toxicity.
