@@ -1,0 +1,2 @@
+﻿project_name,disease_area,target_name,target_id,data_source,activity_type,description,created_time
+EGFR_inhibitor_screening,肿瘤,EGFR,CHEMBL203,ChEMBL,IC50,本项目以内置 EGFR ChEMBL IC50 数据为示例，用于构建 QSAR 活性预测模型。,2026-05-29 14:38:22
