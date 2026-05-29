@@ -13,17 +13,17 @@ from utils.scoring import (
 
 st.set_page_config(
     page_title="药物重定位与综合评分",
-    page_icon="💊",
+    page_icon="🔄",
     layout="wide"
 )
 
-st.title("💊 药物重定位与综合评分")
+st.title("🔄 药物重定位与综合评分")
 
 st.markdown("""
-本模块用于整合 **QSAR 活性概率**、**ADMET score** 和 **Docking score**，
-计算候选分子的综合评分，并输出推荐等级。
+本模块用于汇总 **QSAR 活性概率**、**ADMET score** 和 **Docking score**，
+对候选分子进行统一评分，并输出综合推荐结果。
 
-综合评分公式为：
+当前采用的综合评分公式为：
 
 ```text
 综合评分 = 0.4 × QSAR 活性概率 + 0.3 × ADMET score + 0.3 × Docking score 归一化值
@@ -31,9 +31,9 @@ st.markdown("""
 
 其中：
 
-- QSAR 活性概率越高，说明模型预测该分子具有活性的可能性越大；
-- ADMET score 越高，说明该分子类药性和成药性越好；
-- docking score 通常越低越好，因此需要先归一化为 0 到 1 的分数。
+- QSAR 活性概率越高，表示模型预测该分子具有活性的可能性越大；
+- ADMET score 越高，说明分子的类药性与成药性表现越理想；
+- docking score 通常为负值，数值越低代表结合能力越强，因此会先进行归一化处理。
 """)
 
 st.subheader("1. 输入文件格式要求")
@@ -44,13 +44,13 @@ with col1:
     st.markdown("""
     **QSAR 结果文件**
 
-    文件名建议：
+    推荐文件名：
 
     ```text
     results/qsar_predictions.csv
     ```
 
-    必须包含：
+    文件需包含以下字段：
 
     ```text
     compound_id
@@ -65,20 +65,20 @@ with col2:
     st.markdown("""
     **ADMET 结果文件**
 
-    文件名建议：
+    推荐文件名：
 
     ```text
     results/admet_results.csv
     ```
 
-    必须包含：
+    文件需包含以下字段：
 
     ```text
     compound_id
     admet_score
     ```
 
-    推荐额外包含：
+    如有以下字段也可一并保留：
 
     ```text
     MolWt
@@ -93,20 +93,20 @@ with col3:
     st.markdown("""
     **Docking 结果文件**
 
-    文件名建议：
+    推荐文件名：
 
     ```text
     results/docking_results.csv
     ```
 
-    必须包含：
+    文件需包含以下字段：
 
     ```text
     compound_id
     docking_score
     ```
 
-    可额外包含：
+    如有以下指标也可一并保留：
 
     ```text
     smiles
@@ -118,7 +118,7 @@ with col3:
 st.subheader("2. 选择数据来源")
 
 mode = st.radio(
-    "请选择综合评分所使用的数据来源",
+    "请选择当前使用的数据来源",
     [
         "从 results 文件夹读取",
         "手动上传 CSV 文件",
@@ -155,7 +155,7 @@ def run_scoring(qsar_df, admet_df, docking_df):
         output_path="results/final_ranking.csv"
     )
 
-    st.success(f"综合评分计算完成，结果已保存到：{save_path}")
+    st.success(f"综合评分已完成，结果文件保存至：{save_path}")
 
     st.subheader("综合评分结果")
 
@@ -165,9 +165,9 @@ def run_scoring(qsar_df, admet_df, docking_df):
         best = final_df.iloc[0]
 
         st.info(
-            f"综合评分最高的候选分子是 **{best['compound_id']}**，"
+            f"当前综合评分最高的候选分子是 **{best['compound_id']}**，"
             f"综合评分为 **{best['total_score']}**，"
-            f"推荐等级为 **{best['recommendation']}**。"
+            f"系统推荐等级为 **{best['recommendation']}**。"
         )
 
     csv_data = final_df.to_csv(index=False, encoding="utf-8-sig")
@@ -185,7 +185,7 @@ def run_scoring(qsar_df, admet_df, docking_df):
 if mode == "从 results 文件夹读取":
 
     st.info("""
-    系统将尝试自动读取以下三个文件：
+    系统将自动尝试读取以下文件：
 
     ```text
     results/qsar_predictions.csv
@@ -210,15 +210,15 @@ if mode == "从 results 文件夹读取":
         missing_files.append("results/docking_results.csv")
 
     if missing_files:
-        st.error("缺少以下文件：")
+        st.error("以下文件未检测到：")
 
         for file in missing_files:
             st.write(f"- {file}")
 
-        st.warning("你可以先使用“手动上传 CSV 文件”或“使用演示数据”测试本页面。")
+        st.warning("可先通过“手动上传 CSV 文件”或“使用演示数据”体验当前页面功能。")
 
     else:
-        st.success("三个输入文件读取成功。")
+        st.success("输入文件读取完成")
 
         show_input_data(qsar_df, admet_df, docking_df)
 
@@ -233,7 +233,7 @@ if mode == "从 results 文件夹读取":
 elif mode == "手动上传 CSV 文件":
 
     st.markdown("""
-    请分别上传 QSAR、ADMET 和 docking 三个结果文件。三个文件必须通过 `compound_id` 对应同一批候选分子。
+    请分别上传 QSAR、ADMET 与 docking 结果文件。三个文件需通过 `compound_id` 对应同一批候选分子。
     """)
 
     qsar_file = st.file_uploader(
@@ -260,7 +260,7 @@ elif mode == "手动上传 CSV 文件":
             admet_df = pd.read_csv(admet_file)
             docking_df = pd.read_csv(docking_file)
 
-            st.success("三个文件上传成功。")
+            st.success("文件上传成功。")
 
             show_input_data(qsar_df, admet_df, docking_df)
 
@@ -271,12 +271,12 @@ elif mode == "手动上传 CSV 文件":
             st.error(f"文件读取或综合评分失败：{e}")
 
     else:
-        st.warning("请上传 QSAR、ADMET 和 Docking 三个 CSV 文件。")
+        st.warning("请上传完整的 QSAR、ADMET 和 Docking CSV 文件。")
 
 
 elif mode == "使用演示数据":
 
-    st.info("当前使用系统内置的演示数据，适合在 B、C 模块尚未完成时测试 D 模块。")
+    st.info("当前页面正在使用系统内置演示数据。")
 
     qsar_df = make_demo_qsar_df()
     admet_df = make_demo_admet_df()
@@ -319,5 +319,5 @@ docking_score ≥ -5 ：0.0
 -10 到 -5 之间线性归一化
 ```
 
-因此，docking score 越低，归一化后的 docking 得分越高。
+因此，docking score 越低，对应的归一化得分会越高。
 """)

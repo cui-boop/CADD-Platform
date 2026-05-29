@@ -10,14 +10,15 @@ from utils.run_manager import load_run_history, get_run_dir
 
 st.set_page_config(
     page_title="历史项目与结果汇总",
+    page_icon="🕘",
     layout="wide"
 )
 
-st.title("历史项目与结果汇总")
+st.title("🕘 历史项目与结果汇总")
 
 st.markdown(
     """
-    本页面用于查看每一次模型训练生成的历史记录。
+    本模块用于查看生成的历史记录。
     每次训练完成后，系统会自动保存所使用的数据集、模型参数、评价指标、
     特征重要性和预测结果，方便后续回顾与汇总。
     """

@@ -26,7 +26,7 @@ from utils.run_manager import (
 
 
 st.set_page_config(
-    page_title="模型训练",
+    page_title="🧠 模型训练",
     layout="wide"
 )
 

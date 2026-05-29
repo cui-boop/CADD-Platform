@@ -19,7 +19,7 @@ from utils.qsar_model import predict_single_smiles
 
 
 st.set_page_config(
-    page_title="活性预测",
+    page_title="🎯 活性预测",
     layout="wide"
 )
 
@@ -27,7 +27,7 @@ st.title("活性预测")
 
 st.markdown(
     """
-    本页面用于对新的候选分子进行 QSAR 活性预测。
+    本模块用于对新的候选分子进行 QSAR 活性预测。
     用户输入或编辑一个候选分子的 SMILES 后，系统会读取“模型训练”页面保存的随机森林 QSAR 模型，
     并预测该候选分子属于 Active 或 Inactive 的概率。
     """
