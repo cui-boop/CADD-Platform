@@ -7,3 +7,5 @@ plotly
 joblib
 rdkit
 streamlit-ketcher
+requests
+torch
