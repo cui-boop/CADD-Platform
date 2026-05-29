@@ -81,19 +81,19 @@ st.header("二、训练数据设置")
 
 data_source = st.radio(
     "选择训练数据来源",
-    ["使用 data/cleaned_activity.csv", "上传包含 smiles 列的 CSV 文件"],
+    ["使用 cleaned_activity.csv", "上传包含 smiles 列的 CSV 文件"],
     horizontal=True
 )
 
 data_path = DEFAULT_DATA_PATH
 
-if data_source == "使用 data/cleaned_activity.csv":
+if data_source == "使用 cleaned_activity.csv":
     if not os.path.exists(DEFAULT_DATA_PATH):
-        st.error("未找到 data/cleaned_activity.csv，请先完成活性数据整理。")
+        st.error("未找到 cleaned_activity.csv，请先完成活性数据整理。")
         st.stop()
 
     preview_df = pd.read_csv(DEFAULT_DATA_PATH)
-    st.success("已读取 data/cleaned_activity.csv。")
+    st.success("已读取 cleaned_activity.csv。")
 
 else:
     uploaded_file = st.file_uploader(
@@ -135,12 +135,6 @@ else:
     active_only = False
     st.info("当前数据没有 label 列，将使用全部 SMILES 训练。")
 
-st.info(
-    """
-    注意：SMILES-GRU 的作用是学习训练集中 SMILES 的结构分布并生成新分子，
-    生成结果仍需要继续进行 QSAR 活性预测、ADMET 评价和人工化学合理性检查。
-    """
-)
 
 
 # ============================== 三、训练模型 ==============================
@@ -152,8 +146,7 @@ st.markdown(
     训练任务：给定前面的 SMILES 字符，预测下一个字符。
     训练完成后，模型会保存到 `models/smiles_gru_generator.pt`。
 
-    如果已经提前训练过模型，汇报时可以不再点击训练按钮，
-    直接查看下方“使用已有缓存结果”部分。
+    如果已经提前训练过模型，直接查看下方“使用已有缓存结果”部分。
     """
 )
 
@@ -457,10 +450,6 @@ if os.path.exists(FULL_OUTPUT_PATH):
             mime="text/csv"
         )
 
-        st.info(
-            "后续可以将 `results/generated_molecules.csv` 上传到“分子设计与结构优化”页面，"
-            "也可以继续进行 QSAR 活性预测和 ADMET 评价。"
-        )
     else:
         st.warning("未找到 results/generated_molecules.csv。可以重新点击“生成候选分子”生成简化文件。")
 
@@ -485,17 +474,3 @@ else:
     st.info("目前还没有缓存生成结果。请先训练模型并生成一次候选分子。")
 
 
-# ============================== 六、下一步建议 ==============================
-
-st.header("六、下一步建议")
-
-st.markdown(
-    """
-    生成分子不能直接视为候选药物。建议继续进行：
-
-    1. 将 `results/generated_molecules.csv` 上传到“分子设计与结构优化”页面；
-    2. 对生成分子进行 QSAR 活性预测；
-    3. 对生成分子进行 ADMET 评价；
-    4. 必要时再进行分子对接和人工化学合理性检查。
-    """
-)
