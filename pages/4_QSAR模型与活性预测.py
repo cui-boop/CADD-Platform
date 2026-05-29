@@ -316,8 +316,6 @@ if st.button("开始训练模型"):
     st.markdown("""
     本部分基于随机森林模型的全局特征重要性进行解释。
     重要性越高，说明该分子描述符在模型区分 Active 和 Inactive 分子时贡献越大。
-    需要注意的是，这里的重要性是整个 QSAR 模型层面的解释，
-    不是针对某一个单独候选分子的严格局部解释。
     """)
 
     importance_df = get_feature_importance(model, list(X.columns))
