@@ -50,7 +50,6 @@ div[data-testid="metric-container"] {
 st.title("QSAR 随机森林模型训练")
 st.markdown(
     "本页面使用 **10 个 RDKit 理化参数 + Morgan 指纹** 构建随机森林 QSAR 二分类模型。"
-    "参数可以在主页面直接修改，不放在侧边栏。"
 )
 
 
@@ -376,35 +375,26 @@ if not data_files:
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.subheader("1. 选择训练数据")
 
-c1, c2, c3 = st.columns([1.1, 1.0, 1.0])
-
-with c1:
-    data_file = st.selectbox("数据文件", data_files)
-
+data_file = st.selectbox("数据文件", data_files)
 df = read_table(DATA_DIR / data_file)
 
-smiles_default = guess_smiles_col(df)
-with c2:
-    smiles_col = st.selectbox(
-        "SMILES 列",
-        list(df.columns),
-        index=list(df.columns).index(smiles_default),
-    )
-
+smiles_col = guess_smiles_col(df)
 label_candidates = binary_label_columns(df, smiles_col)
 
 if not label_candidates:
     st.error("没有识别到有效的二分类标签列。标签需要是 0/1、Active/Inactive、True/False 等格式。")
     st.stop()
 
-with c3:
-    target_col = st.selectbox("标签列", label_candidates)
+target_col = label_candidates[0]
 
-st.caption(f"当前数据：{df.shape[0]:,} 行 × {df.shape[1]:,} 列")
+st.caption(
+    f"当前数据：{df.shape[0]:,} 行 × {df.shape[1]:,} 列；"
+    f"自动识别 SMILES 列：{smiles_col}；自动识别标签列：{target_col}"
+)
 st.markdown('</div>', unsafe_allow_html=True)
 
 
-# ========================= 参数设置：主页面，不用侧边栏 =========================
+# ========================= 参数设置 =========================
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.subheader("2. 模型参数设置")
 
@@ -417,30 +407,27 @@ with p2:
     morgan_radius = st.selectbox("Morgan 半径", [2, 3], index=0)
 
 with p3:
-    n_estimators = st.slider("随机森林树数", 100, 500, 220, step=20)
-
-with p4:
-    test_size = st.slider("测试集比例", 0.10, 0.30, 0.20, step=0.05)
-
-p5, p6, p7, p8 = st.columns(4)
-
-with p5:
-    max_depth = st.slider("max_depth", 4, 30, 18, step=2)
-
-with p6:
-    min_samples_leaf = st.slider("min_samples_leaf", 1, 8, 2, step=1)
-
-with p7:
     max_features = st.selectbox("max_features", ["sqrt", "log2"], index=0)
 
-with p8:
+with p4:
     threshold_mode = st.selectbox("分类阈值", ["固定 0.5", "自动选择 F1 最佳阈值"], index=1)
 
-class_weight = st.selectbox(
-    "类别不平衡处理",
-    ["balanced_subsample", "balanced", "不使用"],
-    index=0,
-)
+p5, p6, p7, p8, p9 = st.columns(5)
+
+with p5:
+    n_estimators = st.slider("随机森林树数", 100, 500, 220, step=20)
+
+with p6:
+    max_depth = st.slider("max_depth", 4, 30, 18, step=2)
+
+with p7:
+    min_samples_leaf = st.slider("min_samples_leaf", 1, 8, 2, step=1)
+
+with p8:
+    test_size = st.slider("测试集比例", 0.10, 0.30, 0.20, step=0.05)
+
+with p9:
+    class_weight = st.selectbox("类别权重", ["balanced_subsample", "balanced", "不使用"], index=0)
 
 class_weight_value = None if class_weight == "不使用" else class_weight
 
@@ -448,8 +435,7 @@ st.markdown(
     f"""
     <div class="note">
     当前特征：10 个 RDKit 理化参数 + {morgan_bits} bit Morgan 指纹；
-    当前模型：RandomForestClassifier；
-    参数在主页面调整，不使用侧边栏，也不创建 projects 目录。
+    当前模型：RandomForestClassifier。
     </div>
     """,
     unsafe_allow_html=True,
@@ -570,8 +556,8 @@ if st.button("开始训练随机森林 QSAR 模型", type="primary", use_contain
         "Parameter": [
             "Model",
             "Dataset",
-            "SMILES column",
-            "Target column",
+            "自动识别的 SMILES 列",
+            "自动识别的标签列",
             "RDKit descriptors",
             "Morgan radius",
             "Morgan bits",
@@ -661,4 +647,4 @@ if st.button("开始训练随机森林 QSAR 模型", type="primary", use_contain
     )
 
 else:
-    st.info("选择数据、标签列和模型参数后，点击按钮开始训练。")
+    st.info("选择数据文件和模型参数后，点击按钮开始训练。")
