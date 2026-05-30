@@ -59,20 +59,31 @@ def get_page_icon(title: str) -> str:
     title_lower = title.lower()
 
     rules = [
-    (["活性数据整理", "数据", "清洗", "整理"], "🧹"),
-    (["模型训练", "qsar", "模型", "训练"], "🤖"),
-    (["分子生成", "生成"], "🧬"),
-    (["活性预测", "预测", "活性"], "🎯"),
-    (["成药性筛选", "成药", "admet", "性质", "lipinski"], "🧪"),
-    (["分子设计", "设计"], "💡"),
-    (["文献检索", "llm", "知识提取", "文献", "检索", "知识"], "📚"),
-    ] 
+        (["活性数据整理", "数据", "清洗", "整理"], "🧹"),
+        (["模型训练", "qsar", "模型", "训练"], "🤖"),
+        (["分子生成", "生成"], "🧬"),
+        (["活性预测", "预测", "活性"], "🎯"),
+        (["成药性筛选", "成药", "admet", "性质", "lipinski"], "🧪"),
+        (["分子设计", "设计"], "💡"),
+        (["文献检索", "llm", "知识提取", "文献", "检索", "知识"], "📚"),
+    ]
 
     for keywords, icon in rules:
         if any(keyword.lower() in title_lower for keyword in keywords):
             return icon
 
     return "🔹"
+
+
+def get_title_width(title: str) -> float:
+    """根据标题长度估算功能入口宽度比例。"""
+    chinese_count = sum("\u4e00" <= char <= "\u9fff" for char in title)
+    english_count = len(title) - chinese_count
+
+    width = chinese_count * 1.0 + english_count * 0.55
+
+    # 防止太短的模块过窄，太长的模块过宽
+    return max(1.2, min(width / 4.5, 2.8))
 
 
 pages = load_pages()
@@ -213,7 +224,7 @@ st.markdown(
         text-decoration: none !important;
     }
 
-    /* 功能入口文字 */
+    /* 功能入口文字：强制单行显示 */
     [data-testid="stPageLink"] p {
         margin: 0 !important;
         font-size: 22px !important;
@@ -221,8 +232,8 @@ st.markdown(
         line-height: 1.25 !important;
         color: #111827 !important;
         text-align: center !important;
-        white-space: normal !important;
-        overflow-wrap: anywhere !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
         word-break: keep-all !important;
     }
 
@@ -230,11 +241,13 @@ st.markdown(
     [data-testid="stPageLink"] a span {
         font-size: 34px !important;
         line-height: 1 !important;
+        flex-shrink: 0 !important;
     }
 
     [data-testid="stPageLink"] a svg {
         width: 34px !important;
         height: 34px !important;
+        flex-shrink: 0 !important;
     }
 
     /* 示例数据模块 */
@@ -271,10 +284,11 @@ st.markdown(
             height: 92px !important;
             min-height: 92px !important;
             max-height: 92px !important;
+            padding: 12px 16px !important;
         }
 
         [data-testid="stPageLink"] p {
-            font-size: 19px !important;
+            font-size: 18px !important;
         }
 
         [data-testid="stPageLink"] a span {
@@ -317,9 +331,17 @@ if not pages:
     st.warning("未检测到 pages 文件夹下的功能页面。请确认项目目录中存在 pages 文件夹，并且其中包含 .py 页面文件。")
 else:
     for row_start in range(0, len(pages), 3):
-        cols = st.columns(3, gap="medium")
+        row_pages = pages[row_start: row_start + 3]
 
-        for i, page_file in enumerate(pages[row_start: row_start + 3]):
+        # 根据每个功能名称长度动态分配列宽
+        col_widths = [
+            get_title_width(clean_page_title(page_file))
+            for page_file in row_pages
+        ]
+
+        cols = st.columns(col_widths, gap="medium")
+
+        for i, page_file in enumerate(row_pages):
             index = row_start + i + 1
             title = clean_page_title(page_file)
             icon = get_page_icon(title)
