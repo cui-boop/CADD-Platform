@@ -37,6 +37,10 @@ ADMET_BATCH_PATH = RESULT_DIR / "druglikeness_screening_results.csv"
 DISPLAY_RENAME_MAP = {
     "ADMET_Score": "成药性筛选分数",
     "ADMET_Score_admet": "成药性筛选分数",
+    "passed_rule_count": "通过规则数",
+    "passed_rule_count_admet": "通过规则数",
+    "druglikeness_level": "成药性筛选等级",
+    "druglikeness_level_admet": "成药性筛选等级",
 }
 
 
@@ -51,6 +55,77 @@ def format_display_df(df):
         columns={k: v for k, v in DISPLAY_RENAME_MAP.items() if k in df.columns}
     )
 
+
+def clean_druglikeness_output(df):
+    """
+    清理成药性筛选结果表格，避免同时出现 smiles / SMILES / canonical_smiles 等重复结构列。
+    后续模块统一使用 smiles 列。
+    """
+    if df is None or df.empty:
+        return df
+
+    out_df = df.copy()
+
+    if "SMILES" in out_df.columns:
+        if "smiles" in out_df.columns:
+            out_df = out_df.drop(columns=["SMILES"])
+        else:
+            out_df = out_df.rename(columns={"SMILES": "smiles"})
+
+    if "canonical_smiles" in out_df.columns:
+        if "smiles" in out_df.columns:
+            out_df = out_df.drop(columns=["canonical_smiles"])
+        else:
+            out_df = out_df.rename(columns={"canonical_smiles": "smiles"})
+
+    return out_df
+
+
+
+def add_druglikeness_rule_summary(df):
+    """
+    根据 6 条经验规则计算通过规则数和筛选等级。
+    成药性筛选分数 = 通过规则数 / 6。
+    """
+    if df is None or df.empty:
+        return df
+
+    out_df = df.copy()
+
+    required_cols = ["MolWt", "LogP", "TPSA", "HBD", "HBA", "RotatableBonds"]
+    if not all(col in out_df.columns for col in required_cols):
+        return out_df
+
+    for col in required_cols:
+        out_df[col] = pd.to_numeric(out_df[col], errors="coerce")
+
+    rule_df = pd.DataFrame({
+        "MolWt_rule": out_df["MolWt"] < 500,
+        "LogP_rule": out_df["LogP"] < 5,
+        "TPSA_rule": out_df["TPSA"] < 140,
+        "HBD_rule": out_df["HBD"] <= 5,
+        "HBA_rule": out_df["HBA"] <= 10,
+        "RotatableBonds_rule": out_df["RotatableBonds"] < 10,
+    })
+
+    out_df["passed_rule_count"] = rule_df.sum(axis=1).astype(int)
+
+    def level(n):
+        if n == 6:
+            return "优秀"
+        elif n == 5:
+            return "较好"
+        elif n == 4:
+            return "中等"
+        else:
+            return "较弱"
+
+    out_df["druglikeness_level"] = out_df["passed_rule_count"].apply(level)
+
+    # 与原有内部字段保持兼容：分数 = 通过规则数 / 6
+    out_df["ADMET_Score"] = (out_df["passed_rule_count"] / 6).round(2)
+
+    return out_df
 
 
 def _pick_existing_column(df, candidates):
@@ -68,9 +143,9 @@ def create_top10_docking_candidates():
     从 generated_screening_results.csv 中筛选推荐进入分子对接的 Top 10 候选分子。
 
     筛选逻辑：
-    1. 优先选择 qsar_prediction = Active、qsar_probability >= 0.60、成药性筛选分数 >= 0.65 的分子；
-    2. 在优先推荐分子中，先按 qsar_probability 从高到低排序，再按成药性筛选分数从高到低排序；
-    3. 如果满足优先条件的分子不足 10 个，则用剩余分子按 qsar_probability 和成药性筛选分数继续补足。
+    1. 优先选择 qsar_prediction = Active、qsar_probability >= 0.60、通过规则数 >= 4/6 的分子；
+    2. 在优先推荐分子中，先按 qsar_probability 从高到低排序，再按通过规则数从高到低排序；
+    3. 如果满足优先条件的分子不足 10 个，则用剩余分子按 qsar_probability 和通过规则数继续补足。
 
     注意：这里不计算 docking score。该表只是推荐用户拿去做分子对接的候选分子列表。
     """
@@ -121,6 +196,27 @@ def create_top10_docking_candidates():
     if work_df.empty:
         return None, None
 
+    # 成药性筛选分数是离散规则分数，本质是通过规则数 / 6
+    if "passed_rule_count" in work_df.columns:
+        work_df["passed_rule_count"] = pd.to_numeric(
+            work_df["passed_rule_count"],
+            errors="coerce"
+        ).fillna((work_df[admet_col] * 6).round()).astype(int)
+    else:
+        work_df["passed_rule_count"] = (work_df[admet_col] * 6).round().astype(int)
+
+    def level(n):
+        if n == 6:
+            return "优秀"
+        elif n == 5:
+            return "较好"
+        elif n == 4:
+            return "中等"
+        else:
+            return "较弱"
+
+    work_df["druglikeness_level"] = work_df["passed_rule_count"].apply(level)
+
     if qsar_pred_col is not None:
         active_mask = work_df[qsar_pred_col].astype(str).str.lower().eq("active")
     else:
@@ -129,19 +225,19 @@ def create_top10_docking_candidates():
     work_df["recommended_for_docking"] = (
         active_mask
         & (work_df[qsar_col] >= 0.60)
-        & (work_df[admet_col] >= 0.65)
+        & (work_df["passed_rule_count"] >= 4)
     )
 
     work_df["selection_reason"] = work_df["recommended_for_docking"].map(
         {
-            True: "优先推荐：预测为 Active，且 Active 概率和成药性筛选分数均达到推荐阈值。",
-            False: "备选：未完全达到优先推荐阈值，但在当前候选集中综合排序靠前。"
+            True: "优先推荐：预测为 Active，Active 概率较高，且至少满足 4/6 条成药性经验规则。",
+            False: "备选：未完全达到优先推荐条件，但在当前候选集中综合排序靠前。"
         }
     )
 
-    # 不引入人工 docking 分数；排序只基于规则和已有预测结果
+    # 不引入人工 docking 分数；排序只基于 QSAR 概率和通过规则数
     work_df = work_df.sort_values(
-        ["recommended_for_docking", qsar_col, admet_col],
+        ["recommended_for_docking", qsar_col, "passed_rule_count"],
         ascending=[False, False, False]
     ).head(10).copy()
 
@@ -164,6 +260,8 @@ def create_top10_docking_candidates():
     output_cols.extend(
         [
             admet_col,
+            "passed_rule_count",
+            "druglikeness_level",
             "recommended_for_docking",
             "selection_reason"
         ]
@@ -221,8 +319,8 @@ def show_top10_docking_candidates(download_key):
 
     st.markdown(
         """
-        优先选择qsar_prediction = Active 且 ADMET_Score ≥ 0.65 的分子；
-        在满足条件的分子中，先按 qsar_probability 从高到低排序，再按成药性筛选分数从高到低排序。
+        优先选择 qsar_prediction = Active，且至少满足 4/6 条成药性经验规则的分子；
+        在满足条件的分子中，先按 qsar_probability 从高到低排序，再按通过规则数从高到低排序。
         """
     )
 
@@ -294,28 +392,31 @@ st.markdown("""
 """)
 
 st.info("""
-**成药性筛选分数打分规则说明**
+**成药性筛选规则说明**
 
-当前成药性筛选分数由 6 条经验规则平均得到，每满足 1 条记 1 分，最后除以 6：
+本模块不是连续型预测模型，而是统计候选分子满足 6 条成药性经验规则的数量：
 
-1. `MolWt < 500`
-2. `LogP < 5`
-3. `TPSA < 140`
-4. `HBD ≤ 5`
-5. `HBA ≤ 10`
-6. `RotatableBonds < 10`
+1. MolWt < 500
+2. LogP < 5
+3. TPSA < 140
+4. HBD ≤ 5
+5. HBA ≤ 10
+6. RotatableBonds < 10
 
 其中 MolWt、LogP、HBD 和 HBA 主要对应 Lipinski Rule of Five；
 TPSA 和 RotatableBonds 主要参考 Veber 规则中与口服吸收和生物利用度相关的经验判断。
 
-因此：
+页面同时保留一个“成药性筛选分数”，计算方式为：
 
-- 6 条全部满足：成药性筛选分数 = 1.00
-- 满足 5 条：成药性筛选分数 ≈ 0.83
-- 满足 4 条：成药性筛选分数 ≈ 0.67
-- 满足 3 条：成药性筛选分数 = 0.50
+成药性筛选分数 = 通过规则数 / 6
 
-该分数越高，说明分子越符合这些基础成药性经验规则；但它不能替代真实的药代动力学、毒性实验或专业预测模型。
+规定：
+
+- 6/6 条：分数 = 1.00，等级 = 优秀
+- 5/6 条：分数 ≈ 0.83，等级 = 较好
+- 4/6 条：分数 ≈ 0.67，等级 = 中等
+- ≤3/6 条：分数 ≤ 0.50，等级 = 较弱
+
 """)
 
 # ====================== 单分子预测 ======================
@@ -347,11 +448,15 @@ if st.button("开始成药性筛选"):
 
     st.image(img)
 
+    result_df = pd.DataFrame([result])
+    result_df = add_druglikeness_rule_summary(result_df)
+    result = result_df.iloc[0].to_dict()
+
     # ================= 指标展示 =================
 
     st.subheader("核心指标")
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
         st.metric("MolWt", result["MolWt"])
@@ -363,13 +468,14 @@ if st.button("开始成药性筛选"):
         st.metric("TPSA", result["TPSA"])
 
     with col4:
-        st.metric("成药性筛选分数", result["ADMET_Score"])
+        st.metric("通过规则数", f"{int(result['passed_rule_count'])} / 6")
+
+    with col5:
+        st.metric("筛选等级", result["druglikeness_level"])
 
     # ================= 全部性质 =================
 
     st.subheader("完整属性结果")
-
-    result_df = pd.DataFrame([result])
 
     st.dataframe(
         format_display_df(result_df),
@@ -470,26 +576,28 @@ PAINS Alert = {result["PAINS_Alert"]}
 
 用于识别可能导致假阳性的结构片段。
 
+通过规则数 = {int(result["passed_rule_count"])} / 6
+
+成药性筛选等级 = {result["druglikeness_level"]}
+
 成药性筛选分数 = {result["ADMET_Score"]}
 
-该分数由 MolWt、LogP、TPSA、HBD、HBA 和 RotatableBonds 六条经验规则平均得到。
-分数越高，说明当前分子越符合基础成药性经验规则；但它不是临床级药代动力学或毒性预测结果。
 """)
 
     # ================= 成药性评价 =================
 
     st.subheader("综合评价")
 
-    score = result["ADMET_Score"]
+    passed_count = int(result["passed_rule_count"])
 
-    if score >= 0.85:
-        st.success("该分子较好地满足当前成药性筛选条件，可进一步开展 QSAR、分子对接或后续优化分析。")
+    if passed_count >= 5:
+        st.success("该分子满足 5 条及以上成药性经验规则，规则型成药性筛选表现较好，可进一步开展 QSAR、分子对接或后续优化分析。")
 
-    elif score >= 0.65:
-        st.warning("该分子满足部分成药性经验规则，仍建议结合 QSAR、分子对接和具体结构特征进一步判断。")
+    elif passed_count >= 4:
+        st.warning("该分子满足 4/6 条成药性经验规则，达到基础推荐标准，但仍建议结合 QSAR、分子对接和具体结构特征进一步判断。")
 
     else:
-        st.error("该分子在当前成药性初筛中表现较弱，建议优先进行结构优化或谨慎推进。")
+        st.error("该分子满足的成药性经验规则少于 4 条，建议优先进行结构优化或谨慎推进。")
 
 # ====================== 批量预测 ======================
 
@@ -560,6 +668,8 @@ if df is not None:
             )
 
         result_df = pd.DataFrame(result_list)
+        result_df = clean_druglikeness_output(result_df)
+        result_df = add_druglikeness_rule_summary(result_df)
 
         status_text.success("批量分析完成。")
 
@@ -571,36 +681,56 @@ if df is not None:
         )
 
         st.caption(
-            "说明：批量结果中的成药性筛选分数是基于 6 条理化性质规则计算的综合分数，"
-            "用于早期筛选和排序，不代表真实实验值。"
+            "说明：批量结果中的成药性筛选分数 = 通过规则数 / 6。"
+            "它是离散规则分数，用于早期筛选和排序，不代表真实实验值。"
         )
 
-        st.subheader("成药性筛选分数 分布")
+        st.subheader("通过规则数分布")
 
-        fig = px.histogram(
-            result_df,
-            x="ADMET_Score",
-            nbins=20,
-            title="Rule-based Drug-likeness Score Distribution",
-            labels={"ADMET_Score": "成药性筛选分数"}
-        )
+        score_df = result_df.dropna(subset=["passed_rule_count"]).copy()
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+        if not score_df.empty:
+            count_df = (
+                score_df["passed_rule_count"]
+                .value_counts()
+                .sort_index()
+                .reset_index()
+            )
+            count_df.columns = ["通过规则数", "分子数量"]
+            count_df["通过规则数标签"] = count_df["通过规则数"].astype(str) + " / 6"
 
-        st.subheader("按成药性筛选分数 排序的 Top 候选分子")
+            fig = px.bar(
+                count_df,
+                x="通过规则数标签",
+                y="分子数量",
+                text="分子数量",
+                title="Distribution of Passed Drug-likeness Rules",
+                labels={
+                    "通过规则数标签": "通过规则数",
+                    "分子数量": "分子数量"
+                }
+            )
 
-        top_df = result_df.sort_values(
-            "ADMET_Score",
-            ascending=False
-        ).head(10)
+            fig.update_traces(
+                textposition="outside"
+            )
 
-        st.dataframe(
-            format_display_df(top_df),
-            use_container_width=True
-        )
+            fig.update_layout(
+                height=430,
+                margin=dict(l=10, r=10, t=55, b=20)
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
+
+            st.caption(
+                "说明：该图展示候选分子满足 6 条成药性经验规则中的几条。"
+                "推荐标准为至少满足 4/6 条规则，而不是设置连续型分数阈值。"
+            )
+        else:
+            st.warning("当前批量结果中没有可用于可视化的通过规则数。")
 
         if source_mode == "使用已生成的候选分子集 results/generated_molecules.csv":
             result_df.to_csv(

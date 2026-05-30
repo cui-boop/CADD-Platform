@@ -206,6 +206,33 @@ def guess_smiles_col(df):
     return df.columns[0]
 
 
+def get_auto_smiles_col(df):
+    """
+    自动识别 SMILES 列。
+    """
+    for c in ["smiles", "SMILES", "canonical_smiles", "Canonical_SMILES", "smile", "Smile"]:
+        if c in df.columns:
+            return c
+    return None
+
+
+def clean_prediction_output(out_df):
+    """
+    清理批量活性预测结果，避免同时出现 smiles 和 canonical_smiles 两列。
+    后续模块统一使用 smiles 列。
+    """
+    out_df = out_df.copy()
+
+    if "canonical_smiles" in out_df.columns:
+        if "smiles" in out_df.columns:
+            out_df["smiles"] = out_df["canonical_smiles"].combine_first(out_df["smiles"])
+            out_df = out_df.drop(columns=["canonical_smiles"])
+        else:
+            out_df = out_df.rename(columns={"canonical_smiles": "smiles"})
+
+    return out_df
+
+
 def batch_predict(df, smiles_col, package):
     rows = []
 
@@ -397,19 +424,13 @@ with tab2:
     st.markdown('</div>', unsafe_allow_html=True)
 
     if df is not None:
-        smiles_default = guess_smiles_col(df)
+        smiles_col = get_auto_smiles_col(df)
 
-        c1, c2 = st.columns([1.0, 1.0])
+        if smiles_col is None:
+            st.error("当前候选分子文件中未检测到 smiles 列，请确认文件至少包含 smiles 或 canonical_smiles 列。")
+            st.stop()
 
-        with c1:
-            smiles_col = st.selectbox(
-                "选择 SMILES 列",
-                list(df.columns),
-                index=list(df.columns).index(smiles_default),
-            )
-
-        with c2:
-            st.metric("候选分子数量", f"{len(df):,}")
+        st.metric("候选分子数量", f"{len(df):,}")
 
         if st.button("开始批量预测", type="primary", use_container_width=True):
             with st.spinner("正在计算分子特征并预测活性..."):
@@ -422,6 +443,8 @@ with tab2:
                 ],
                 axis=1,
             )
+
+            out_df = clean_prediction_output(out_df)
 
             out_df = out_df.sort_values(
                 "prob_active",
@@ -437,7 +460,6 @@ with tab2:
                 out_df.to_csv(GENERATED_QSAR_PATH, index=False, encoding="utf-8-sig")
                 out_df.to_csv(BATCH_PATH, index=False, encoding="utf-8-sig")
                 st.success("批量活性预测完成，结果已保存：results/generated_qsar_predictions.csv")
-                st.info("下一步请进入 ADMET 预测页面，对同一批 generated_molecules.csv 进行批量 ADMET 分析。完成后系统会合并 QSAR 与 ADMET 结果，并生成推荐用于分子对接的 Top 10 候选分子。")
             else:
                 out_df.to_csv(BATCH_PATH, index=False, encoding="utf-8-sig")
                 st.success("批量预测完成，结果已保存：results/new_molecule_qsar_prediction.csv")
@@ -449,45 +471,62 @@ with tab2:
             m2.metric("预测 Active", f"{int((valid['pred_label'] == 1).sum()):,}")
             m3.metric("最高 Active 概率", f"{valid['prob_active'].max():.4f}" if len(valid) else "NA")
 
-            c1, c2 = st.columns([0.95, 1.05])
+            st.subheader("Active 概率排序图")
 
-            with c1:
-                count_df = valid["prediction"].value_counts().reset_index()
-                count_df.columns = ["Prediction", "Count"]
+            scatter_df = valid.sort_values(
+                "prob_active",
+                ascending=False
+            ).reset_index(drop=True)
 
-                fig = px.bar(
-                    count_df,
-                    x="Prediction",
-                    y="Count",
-                    text="Count",
-                    title="预测类别分布",
-                )
-                fig.update_traces(textposition="outside")
-                fig.update_layout(
-                    height=380,
-                    margin=dict(l=10, r=10, t=55, b=20),
-                )
-                st.plotly_chart(fig, use_container_width=True)
+            scatter_df["rank_by_active_probability"] = range(1, len(scatter_df) + 1)
 
-            with c2:
-                fig = px.histogram(
-                    valid,
-                    x="prob_active",
-                    nbins=30,
-                    title="Active 概率分布",
-                )
-                fig.update_layout(
-                    height=380,
-                    xaxis_title="Active Probability",
-                    yaxis_title="Molecule Count",
-                    margin=dict(l=10, r=10, t=55, b=20),
-                )
-                st.plotly_chart(fig, use_container_width=True)
+            hover_cols = [
+                col for col in [
+                    "compound_id",
+                    "smiles",
+                    "prob_active",
+                    "prediction",
+                    "threshold"
+                ]
+                if col in scatter_df.columns
+            ]
+
+            fig = px.scatter(
+                scatter_df,
+                x="rank_by_active_probability",
+                y="prob_active",
+                color="prediction",
+                hover_data=hover_cols,
+                title="Candidate Molecules Ranked by Active Probability",
+                labels={
+                    "rank_by_active_probability": "候选分子排序",
+                    "prob_active": "Active 概率",
+                    "prediction": "预测类别"
+                }
+            )
+
+            fig.add_hline(
+                y=threshold,
+                line_dash="dash",
+                annotation_text=f"分类阈值 {threshold:.3f}",
+                annotation_position="bottom right"
+            )
+
+            fig.update_traces(
+                marker=dict(size=10, opacity=0.85)
+            )
+
+            fig.update_layout(
+                height=430,
+                margin=dict(l=10, r=10, t=55, b=20),
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
 
             st.subheader("Top 20 高分候选分子")
 
             top = valid.head(20).copy()
-            top["show_name"] = top["canonical_smiles"].astype(str).str.slice(0, 45)
+            top["show_name"] = top["smiles"].astype(str).str.slice(0, 45)
 
             fig = px.bar(
                 top.sort_values("prob_active"),

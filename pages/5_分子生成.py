@@ -38,7 +38,7 @@ st.markdown(
     然后逐字符采样生成新的候选分子。
 
     生成结果会经过 RDKit 有效性检查、去重和基础理化性质计算，
-    并保存为后续“分子设计与结构优化”、QSAR 活性预测和 ADMET 评价可使用的候选分子文件。
+    并保存为后续“分子设计与结构优化”、QSAR 活性预测和成药性筛选可使用的候选分子文件。
     """
 )
 
@@ -50,6 +50,41 @@ GENERATOR_MODEL_PATH = "models/smiles_gru_generator.pt"
 FULL_OUTPUT_PATH = "results/gru_generated_molecules.csv"
 COMPATIBLE_OUTPUT_PATH = "results/generated_molecules.csv"
 TRAINING_LOSS_PATH = "results/smiles_gru_training_loss.csv"
+
+
+def prepare_generation_output(df):
+    """
+    统一分子生成结果表格格式。
+
+    SMILES-GRU 原始输出中：
+    - smiles：模型直接生成的原始字符串；
+    - canonical_smiles：RDKit 标准化后的 SMILES。
+
+    为避免页面和结果文件出现两列 SMILES，这里只保留标准化后的 SMILES，
+    并统一命名为 smiles。后续 QSAR、成药性筛选和分子设计页面都使用这一列。
+    """
+    if df is None or df.empty:
+        return df
+
+    out_df = df.copy()
+
+    if "canonical_smiles" in out_df.columns:
+        if "smiles" in out_df.columns:
+            out_df = out_df.drop(columns=["smiles"])
+        out_df = out_df.rename(columns={"canonical_smiles": "smiles"})
+
+    return out_df
+
+
+def get_smiles_column(df):
+    """
+    返回当前结果表中可用于结构预览的 SMILES 列名。
+    """
+    if "smiles" in df.columns:
+        return "smiles"
+    if "canonical_smiles" in df.columns:
+        return "canonical_smiles"
+    return None
 
 
 # ============================== 一、环境检查 ==============================
@@ -347,8 +382,10 @@ if st.button("生成候选分子"):
             st.error("没有生成有效分子。可以尝试提高 temperature、增加生成数量或减少过滤条件。")
             st.stop()
 
+        output_df = prepare_generation_output(generated_df)
+
         full_path, compatible_path = save_generated_molecules(
-            generated_df,
+            output_df,
             full_output_path=FULL_OUTPUT_PATH,
             compatible_output_path=COMPATIBLE_OUTPUT_PATH
         )
@@ -363,7 +400,7 @@ if st.button("生成候选分子"):
 
         st.subheader("本次生成分子结果")
         st.dataframe(
-            generated_df,
+            output_df,
             use_container_width=True
         )
 
@@ -375,14 +412,12 @@ if st.button("生成候选分子"):
         st.download_button(
             key="download_current_gru_generated_molecules",
             label="下载本次生成结果 gru_generated_molecules.csv",
-            data=generated_df.to_csv(index=False, encoding="utf-8-sig"),
+            data=output_df.to_csv(index=False, encoding="utf-8-sig"),
             file_name="gru_generated_molecules.csv",
             mime="text/csv"
         )
 
-        compatible_df = generated_df[["compound_id", "canonical_smiles"]].rename(
-            columns={"canonical_smiles": "smiles"}
-        )
+        compatible_df = output_df[["compound_id", "smiles"]].copy()
 
         st.download_button(
             key="download_current_generated_molecules",
@@ -395,19 +430,21 @@ if st.button("生成候选分子"):
         if rdkit_available():
             st.subheader("本次生成分子结构预览")
 
-            show_df = generated_df.head(12)
+            smiles_col = get_smiles_column(output_df)
+            show_df = output_df.head(12)
             cols = st.columns(3)
 
             for i, (_, row) in enumerate(show_df.iterrows()):
                 with cols[i % 3]:
-                    img = get_mol_image(row["canonical_smiles"])
-                    if img is not None:
-                        st.image(
-                            img,
-                            caption=f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}"
-                        )
-                    else:
-                        st.write(row["canonical_smiles"])
+                    if smiles_col is not None:
+                        img = get_mol_image(row[smiles_col])
+                        if img is not None:
+                            st.image(
+                                img,
+                                caption=f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}"
+                            )
+                        else:
+                            st.write(row[smiles_col])
 
     except Exception as e:
         st.error(f"生成失败：{e}")
@@ -427,6 +464,14 @@ if os.path.exists(FULL_OUTPUT_PATH):
     st.success(f"已检测到缓存生成结果：{FULL_OUTPUT_PATH}")
 
     cached_df = pd.read_csv(FULL_OUTPUT_PATH)
+    cached_df = prepare_generation_output(cached_df)
+
+    # 如果旧缓存里同时存在 smiles 和 canonical_smiles，自动整理并覆盖为新的统一格式
+    cached_df.to_csv(
+        FULL_OUTPUT_PATH,
+        index=False,
+        encoding="utf-8-sig"
+    )
 
     st.subheader("缓存生成分子结果")
     st.dataframe(cached_df, use_container_width=True)
@@ -453,7 +498,9 @@ if os.path.exists(FULL_OUTPUT_PATH):
     else:
         st.warning("未找到 results/generated_molecules.csv。可以重新点击“生成候选分子”生成简化文件。")
 
-    if rdkit_available() and "canonical_smiles" in cached_df.columns:
+    smiles_col = get_smiles_column(cached_df)
+
+    if rdkit_available() and smiles_col is not None:
         st.subheader("缓存分子结构预览")
 
         show_df = cached_df.head(12)
@@ -461,14 +508,14 @@ if os.path.exists(FULL_OUTPUT_PATH):
 
         for i, (_, row) in enumerate(show_df.iterrows()):
             with cols[i % 3]:
-                img = get_mol_image(row["canonical_smiles"])
+                img = get_mol_image(row[smiles_col])
                 if img is not None:
                     st.image(
                         img,
                         caption=f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}"
                     )
                 else:
-                    st.write(row["canonical_smiles"])
+                    st.write(row[smiles_col])
 
 else:
     st.info("目前还没有缓存生成结果。请先训练模型并生成一次候选分子。")
