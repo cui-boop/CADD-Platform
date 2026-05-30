@@ -1,0 +1,7 @@
+﻿compound_id,smiles
+DES_GRU_GEN_0026_001,CC(C)(C)CNc1c(C#N)cnc2c(F)cc(N[C@H](C3=CN(C4(C(F)(F)F)CC4)NN3)c3cccnc3)cc12
+DES_GRU_GEN_0026_002,CC(C)(C)CNc1c(C#N)c(F)nc2c(Cl)cc(N[C@H](C3=CN(C4(C(F)(F)F)CC4)NN3)c3cccnc3)cc12
+DES_GRU_GEN_0026_003,CC(C)(C)CNc1c(C#N)c(O)nc2c(Cl)cc(N[C@H](C3=CN(C4(C(F)(F)F)CC4)NN3)c3cccnc3)cc12
+DES_GRU_GEN_0026_004,CC(C)(C)CNc1c(C#N)c(N)nc2c(Cl)cc(N[C@H](C3=CN(C4(C(F)(F)F)CC4)NN3)c3cccnc3)cc12
+DES_GRU_GEN_0026_005,Cc1nc2c(Cl)cc(N[C@H](C3=CN(C4(C(F)(F)F)CC4)NN3)c3cccnc3)cc2c(NCC(C)(C)C)c1C#N
+DES_GRU_GEN_0026_006,CC(C)(C)CNc1c(C#N)cnc2c(Cl)cc(N[C@H](C3=CN(C4(F)CC4)NN3)c3cccnc3)cc12
