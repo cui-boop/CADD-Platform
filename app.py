@@ -75,15 +75,18 @@ def get_page_icon(title: str) -> str:
     return "🔹"
 
 
-def get_title_width(title: str) -> float:
-    """根据标题长度估算功能入口宽度比例。"""
+def get_card_width(title: str) -> int:
+    """根据标题长度估算功能入口卡片宽度，尽量保证单行展示。"""
     chinese_count = sum("\u4e00" <= char <= "\u9fff" for char in title)
     english_count = len(title) - chinese_count
 
-    width = chinese_count * 1.0 + english_count * 0.55
+    text_score = chinese_count * 24 + english_count * 14
 
-    # 防止太短的模块过窄，太长的模块过宽
-    return max(1.2, min(width / 4.5, 2.8))
+    # 基础宽度包括图标、序号、左右内边距
+    width = 130 + text_score
+
+    # 控制最小和最大宽度，避免过短或过长
+    return max(280, min(width, 520))
 
 
 pages = load_pages()
@@ -188,66 +191,64 @@ st.markdown(
         padding-right: 0.35rem !important;
     }
 
-    /* 功能入口卡片 */
-    [data-testid="stPageLink"] {
+    /* 自定义功能入口卡片 */
+    .page-card-wrap {
         width: 100%;
-        height: 96px;
+        display: flex;
+        justify-content: flex-start;
         margin-bottom: 18px;
     }
 
-    [data-testid="stPageLink"] a {
-        width: 100% !important;
-        height: 96px !important;
-        min-height: 96px !important;
-        max-height: 96px !important;
-        box-sizing: border-box !important;
+    .page-card-wrap a {
+        height: 96px;
+        box-sizing: border-box;
 
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 12px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
 
-        padding: 14px 22px !important;
-        border-radius: 22px !important;
-        border: 1px solid #e5e7eb !important;
-        background: rgba(255, 255, 255, 0.94) !important;
-        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.055) !important;
-        transition: all 0.18s ease !important;
-        text-decoration: none !important;
+        padding: 14px 28px;
+        border-radius: 22px;
+        border: 1px solid #e5e7eb;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.055);
+        transition: all 0.18s ease;
+        text-decoration: none;
+        color: #111827;
+        overflow: visible;
     }
 
-    [data-testid="stPageLink"] a:hover {
+    .page-card-wrap a:hover {
         transform: translateY(-3px);
-        border-color: #99f6e4 !important;
-        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.10) !important;
-        background: #ffffff !important;
-        text-decoration: none !important;
+        border-color: #99f6e4;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.10);
+        background: #ffffff;
+        text-decoration: none;
     }
 
-    /* 功能入口文字：强制单行显示 */
-    [data-testid="stPageLink"] p {
-        margin: 0 !important;
-        font-size: 22px !important;
-        font-weight: 850 !important;
-        line-height: 1.25 !important;
-        color: #111827 !important;
-        text-align: center !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
-        word-break: keep-all !important;
+    /* 固定图标槽位，保证每列文字起点对齐 */
+    .page-card-icon {
+        width: 54px;
+        min-width: 54px;
+        height: 54px;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        font-size: 42px;
+        line-height: 1;
+        flex-shrink: 0;
     }
 
-    /* 放大 page_icon */
-    [data-testid="stPageLink"] a span {
-        font-size: 34px !important;
-        line-height: 1 !important;
-        flex-shrink: 0 !important;
-    }
-
-    [data-testid="stPageLink"] a svg {
-        width: 34px !important;
-        height: 34px !important;
-        flex-shrink: 0 !important;
+    .page-card-title {
+        font-size: 22px;
+        font-weight: 850;
+        line-height: 1.25;
+        color: #111827;
+        white-space: nowrap;
+        word-break: keep-all;
     }
 
     /* 示例数据模块 */
@@ -276,23 +277,21 @@ st.markdown(
             font-size: 17px;
         }
 
-        [data-testid="stPageLink"] {
+        .page-card-wrap a {
             height: 92px;
+            padding: 12px 18px;
+            max-width: 100%;
         }
 
-        [data-testid="stPageLink"] a {
-            height: 92px !important;
-            min-height: 92px !important;
-            max-height: 92px !important;
-            padding: 12px 16px !important;
+        .page-card-icon {
+            width: 48px;
+            min-width: 48px;
+            height: 48px;
+            font-size: 36px;
         }
 
-        [data-testid="stPageLink"] p {
-            font-size: 18px !important;
-        }
-
-        [data-testid="stPageLink"] a span {
-            font-size: 30px !important;
+        .page-card-title {
+            font-size: 18px;
         }
     }
     </style>
@@ -332,25 +331,25 @@ if not pages:
 else:
     for row_start in range(0, len(pages), 3):
         row_pages = pages[row_start: row_start + 3]
-
-        # 根据每个功能名称长度动态分配列宽
-        col_widths = [
-            get_title_width(clean_page_title(page_file))
-            for page_file in row_pages
-        ]
-
-        cols = st.columns(col_widths, gap="medium")
+        cols = st.columns(3, gap="medium")
 
         for i, page_file in enumerate(row_pages):
             index = row_start + i + 1
             title = clean_page_title(page_file)
             icon = get_page_icon(title)
+            width = get_card_width(title)
 
             with cols[i]:
-                st.page_link(
-                    f"pages/{page_file.name}",
-                    label=f"{index:02d} {title}",
-                    icon=icon
+                st.markdown(
+                    f"""
+                    <div class="page-card-wrap">
+                        <a href="pages/{page_file.name}" target="_self" style="width: {width}px;">
+                            <span class="page-card-icon">{icon}</span>
+                            <span class="page-card-title">{index:02d} {title}</span>
+                        </a>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
 
