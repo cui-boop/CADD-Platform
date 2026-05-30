@@ -1,0 +1,4 @@
+﻿design_id,parent_compound_id,parent_smiles,designed_smiles,canonical_smiles,design_strategy,expected_improvement,design_emphasis,valid_smiles,MolWt,LogP,TPSA,HBD,HBA,RotatableBonds,MolWt_delta,LogP_delta,TPSA_delta,parent_profile_summary
+D001,C001,CCOc1ccc(N)cc1,CCOc1ccc(N)cc1F,CCOc1ccc(N)cc1F,芳香环引入 F,增强代谢稳定性并微调结合口袋适配性。,均衡优化,True,155.172,1.807,35.25,1,2,2,17.99,0.14,0.0,QSAR 活性概率较高，建议保留核心骨架。；ADMET 表现尚可，优化时避免显著增加分子量和 LogP。；docking score 较好，可围绕关键相互作用做小幅结构优化。
+D002,C001,CCOc1ccc(N)cc1,CCOc1ccc(N)cc1O,CCOc1ccc(N)cc1O,芳香环引入 OH,增加氢键供体或受体，有助于增强关键氢键。,均衡优化,True,153.181,1.373,55.48,2,3,2,15.999,-0.294,20.23,QSAR 活性概率较高，建议保留核心骨架。；ADMET 表现尚可，优化时避免显著增加分子量和 LogP。；docking score 较好，可围绕关键相互作用做小幅结构优化。
+D003,C001,CCOc1ccc(N)cc1,CCOc1ccc(N)cc1C,CCOc1ccc(N)cc1C,芳香环引入 CH3,增强疏水相互作用，但需关注 LogP。,均衡优化,True,151.209,1.976,35.25,1,2,2,14.027,0.309,0.0,QSAR 活性概率较高，建议保留核心骨架。；ADMET 表现尚可，优化时避免显著增加分子量和 LogP。；docking score 较好，可围绕关键相互作用做小幅结构优化。
