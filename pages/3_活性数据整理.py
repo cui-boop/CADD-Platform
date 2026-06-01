@@ -15,11 +15,11 @@ from utils.data_cleaning import (
 
 st.set_page_config(
     page_title="活性数据整理",
-    page_icon="🧪",
+    page_icon="🧹",
     layout="wide"
 )
 
-st.title("🧪 活性数据整理")
+st.title("🧹 活性数据整理")
 
 st.markdown(
     """
@@ -31,38 +31,44 @@ st.markdown(
 
 st.divider()
 
-st.header("一、数据格式说明")
+st.header("一、支持的数据格式")
 
 st.markdown(
     """
-    本页面支持以下数据格式：
+    系统目前支持两类常见活性数据来源。
 
-    **1. ChEMBL 原始导出数据**
+    **1. ChEMBL 数据库导出文件**
 
-    ChEMBL Activities 页面导出的原始 CSV 数据，一般包含以下字段：
+    适用于从 ChEMBL Activities 页面直接导出的实验活性数据，
+    常见字段包括：
 
     Molecule ChEMBL ID ｜ Smiles ｜ Target Name ｜ Standard Type ｜ Standard Value ｜ Standard Units ｜ Standard Relation
 
-    **2. 项目标准化数据格式**
+    **2. 项目标准化活性数据**
 
-    项目内部标准化活性数据，至少需要包含：
+    适用于经过预处理或项目内部整理的数据表，
+    建议至少包含以下核心字段：
 
     compound_id ｜ smiles ｜ target ｜ activity_type ｜ activity_value ｜ unit
 
-    上传后系统将自动识别字段结构并完成格式匹配。
+    上传后系统将自动完成字段识别与格式映射，无需手动调整列顺序。
     """
 )
 
 st.info(
     """
-    推荐使用以下 ChEMBL 筛选条件：
-    Target Type：SINGLE PROTEIN  
-    Organism：Homo sapiens  
-    Standard Type：IC50 或 Ki  
-    Standard Units：nM  
-    Standard Relation：=  
-    Standard Value：> 0  
-    Smiles：非空
+    为保证后续模型训练与预测结果的可靠性，建议优先使用实验条件明确、
+    结构信息完整且数据质量较高的活性记录。
+
+    推荐的数据筛选策略如下：
+
+    • Target Type：SINGLE PROTEIN
+    • Organism：Homo sapiens
+    • Standard Type：IC50 或 Ki
+    • Standard Units：nM
+    • Standard Relation：=
+    • Standard Value：> 0
+    • SMILES：Not Null
     """
 )
 

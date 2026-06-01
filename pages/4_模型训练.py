@@ -22,7 +22,11 @@ from sklearn.metrics import (
 
 
 # ========================= 页面配置 =========================
-st.set_page_config(page_title="QSAR模型训练", page_icon="🌲", layout="wide")
+st.set_page_config(
+    page_title="QSAR模型训练", 
+    page_icon="🤖", 
+    layout="wide"
+)
 
 st.markdown("""
 <style>
@@ -47,7 +51,7 @@ div[data-testid="metric-container"] {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("QSAR 随机森林模型训练")
+st.title("🌲QSAR 随机森林模型训练")
 st.markdown(
     "本页面使用 **10 个 RDKit 理化参数 + Morgan 指纹** 构建随机森林 QSAR 二分类模型。"
 )

@@ -19,7 +19,11 @@ except Exception:
 
 
 # ========================= 页面配置 =========================
-st.set_page_config(page_title="活性分子预测", page_icon="🧪", layout="wide")
+st.set_page_config(
+    page_title="活性分子预测", 
+    page_icon="🎯", 
+    layout="wide"
+)
 
 st.markdown("""
 <style>
@@ -44,9 +48,9 @@ div[data-testid="metric-container"] {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("活性分子预测")
+st.title("🎯活性分子预测")
 st.markdown(
-    "加载已经训练好的 **随机森林 QSAR 模型**，支持单分子 SMILES 预测、交互式分子绘制预测和批量候选分子预测。"
+    "基于已完成训练的随机森林 QSAR 模型，对候选分子的潜在活性进行快速评估。既可针对单个分子开展预测，也可对批量候选化合物进行统一筛选与排序。"
 )
 
 
@@ -280,7 +284,7 @@ def run_ketcher(default_smiles):
 
 # ========================= 加载模型 =========================
 if not MODEL_PATH.exists():
-    st.error("没有找到 models/qsar_random_forest.pkl。请先在 QSAR 模型训练页面训练模型。")
+    st.error("未找到 models/qsar_random_forest.pkl。请先在 QSAR 模型训练页面训练模型。")
     st.stop()
 
 package = joblib.load(MODEL_PATH)
@@ -567,4 +571,4 @@ with tab2:
                 use_container_width=True,
             )
     else:
-        st.info("请选择已生成候选分子集，或上传候选分子文件后进行批量活性预测。")
+        st.info("请选择已生成的候选分子集，或上传候选分子文件后进行批量活性预测。")
