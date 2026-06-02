@@ -384,17 +384,18 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("💊 成药性筛选")
+st.title("🧪 成药性筛选")
 
 st.markdown("""
-本模块用于对候选分子进行 **早期类药性与成药性初筛**。页面会基于 RDKit 计算分子的基础理化性质，
-并结合 Lipinski Rule、Veber 相关经验规则和 PAINS 结构警示，对候选分子进行规则型筛选。
+本页面主要针对候选分子开展早期成药性评估。系统基于 RDKit 计算分子的关键理化参数，
+结合 Lipinski Rule of Five、Veber 经验规则以及 PAINS 结构警示信息，
+对候选分子的类药性特征进行快速筛查。
 """)
 
 st.info("""
-**成药性筛选规则说明**
+**成药性评估依据**
 
-本模块不是连续型预测模型，而是统计候选分子满足 6 条成药性经验规则的数量：
+本模块不是连续型预测模型，而是围绕小分子药物开发中常用的六项理化指标展开：
 
 1. MolWt < 500
 2. LogP < 5
@@ -403,11 +404,12 @@ st.info("""
 5. HBA ≤ 10
 6. RotatableBonds < 10
 
-其中 MolWt、LogP、HBD 和 HBA 主要对应 Lipinski Rule of Five；
-TPSA 和 RotatableBonds 主要参考 Veber 规则中与口服吸收和生物利用度相关的经验判断。
+其中，MolWt、LogP、HBD 和 HBA 主要来源于 Lipinski Rule of Five，
+用于评估化合物的基础类药性特征；TPSA 与 RotatableBonds 则参考 Veber 规则，
+常用于评价分子的口服吸收潜力和生物利用度表现。
 
-页面同时保留一个“成药性筛选分数”，计算方式为：
-
+为便于不同候选分子之间的横向比较，页面同时保留一个“成药性筛选分数”
+计算方式为：
 成药性筛选分数 = 通过规则数 / 6
 
 规定：

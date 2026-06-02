@@ -33,11 +33,11 @@ st.title("🧬 SMILES-GRU 分子生成")
 
 st.markdown(
     """
-    本模块采用轻量级 **SMILES-GRU 字符级语言模型** 进行分子生成。
+    本模块基于 SMILES 序列生成模型开展新分子结构设计。
     模型会读取当前项目中的 `cleaned_activity.csv`，学习其中 SMILES 字符串的排列规律，
-    然后逐字符采样生成新的候选分子。
+    然后逐字符采样生成具有相似结构特征的新候选分子。
 
-    生成结果会经过 RDKit 有效性检查、去重和基础理化性质计算，
+    生成结果将自动进行 RDKit 有效性检查、去重和基础理化性质计算，
     并保存为后续“分子设计与结构优化”、QSAR 活性预测和成药性筛选可使用的候选分子文件。
     """
 )
@@ -89,7 +89,7 @@ def get_smiles_column(df):
 
 # ============================== 一、环境检查 ==============================
 
-st.header("一、环境检查")
+st.header("一、运行环境检测")
 
 col1, col2 = st.columns(2)
 
@@ -97,14 +97,14 @@ with col1:
     if torch_available():
         st.success("已检测到 PyTorch：可以训练和运行 SMILES-GRU 生成模型。")
     else:
-        st.error("未检测到 PyTorch。请先安装 torch。")
+        st.error("未检测到 PyTorch：无法执行模型训练任务，请先安装 torch。")
         st.code("python -m pip install torch", language="powershell")
 
 with col2:
     if rdkit_available():
-        st.success("已检测到 RDKit：可以进行 SMILES 有效性检查和分子性质计算。")
+        st.success("已检测到 RDKit：可进行分子结构解析、有效性验证及性质计算。")
     else:
-        st.warning("未检测到 RDKit：可以训练字符串模型，但无法严格检查生成分子是否合法。")
+        st.warning("未检测到 RDKit：模型仍可完成字符串生成，但无法进行严格的化学结构有效性校验。")
 
 if not torch_available():
     st.stop()
@@ -112,7 +112,7 @@ if not torch_available():
 
 # ============================== 二、训练数据设置 ==============================
 
-st.header("二、训练数据设置")
+st.header("二、训练数据配置")
 
 data_source = st.radio(
     "选择训练数据来源",
@@ -155,20 +155,20 @@ else:
         encoding="utf-8-sig"
     )
 
-    st.success("上传数据已读取。")
+    st.success("上传文件解析完成。")
 
-st.subheader("训练数据预览")
+st.subheader("训练数据集预览")
 st.dataframe(preview_df.head(), use_container_width=True)
 
 if "label" in preview_df.columns:
     active_only = st.checkbox(
         "仅使用 Active 分子训练生成模型",
         value=True,
-        help="推荐开启：模型会更倾向于学习活性分子的结构分布。"
+        help="建议开启，仅使用活性分子可使模型更聚焦于潜在有效结构空间布。"
     )
 else:
     active_only = False
-    st.info("当前数据没有 label 列，将使用全部 SMILES 训练。")
+    st.info("当前数据集中未检测到活性标签，将使用全部分子结构参与训练。")
 
 
 
@@ -179,7 +179,9 @@ st.header("三、训练 SMILES-GRU 生成模型")
 st.markdown(
     """
     训练任务：给定前面的 SMILES 字符，预测下一个字符。
-    训练完成后，模型会保存到 `models/smiles_gru_generator.pt`。
+    
+    训练完成后模型将自动保存至 `models/smiles_gru_generator.pt`，
+    可用于后续候选分子生成任务。
 
     如果已经提前训练过模型，直接查看下方“使用已有缓存结果”部分。
     """
@@ -249,7 +251,7 @@ device = "cpu"
 if os.path.exists(GENERATOR_MODEL_PATH):
     st.success(f"已检测到训练好的生成模型：{GENERATOR_MODEL_PATH}")
 else:
-    st.info("尚未检测到训练好的生成模型。第一次使用需要先训练一次。")
+    st.info("当前未发现已训练模型，首次使用请先完成模型训练。")
 
 if st.button("开始训练生成模型", type="primary"):
     try:
@@ -277,9 +279,9 @@ if st.button("开始训练生成模型", type="primary"):
                 random_state=42
             )
 
-        st.success(f"生成模型训练完成，模型已保存到：{model_path}")
+        st.success(f"模型训练完成，训练结果已保存至：{model_path}")
 
-        st.subheader("训练信息")
+        st.subheader("训练参数与统计信息")
         st.dataframe(
             pd.DataFrame([train_info]),
             use_container_width=True
@@ -306,17 +308,17 @@ if st.button("开始训练生成模型", type="primary"):
 
 # ============================== 四、生成候选分子 ==============================
 
-st.header("四、生成候选分子")
+st.header("四、候选分子生成")
 
 st.markdown(
     """
-    如果已经存在训练好的模型，可以直接点击“生成候选分子”。
+    若有已训练完成的生成模型，可以直接点击“生成候选分子”。
     生成结果会保存为 `results/gru_generated_molecules.csv` 和 `results/generated_molecules.csv`。
     """
 )
 
 if not os.path.exists(GENERATOR_MODEL_PATH):
-    st.warning("尚未找到训练好的模型。请先训练生成模型，或确认 models/smiles_gru_generator.pt 是否存在。")
+    st.warning("当前未发现已训练模型。请先训练生成模型，或确认 models/smiles_gru_generator.pt 是否存在。")
 else:
     st.success("已检测到训练好的 SMILES-GRU 模型，可以进行分子生成。")
 
@@ -362,7 +364,7 @@ filter_novel = st.checkbox(
 
 if st.button("生成候选分子"):
     if not os.path.exists(GENERATOR_MODEL_PATH):
-        st.error("尚未找到训练好的生成模型，请先训练模型。")
+        st.error("当前未发现已训练模型，请先训练模型。")
         st.stop()
 
     try:
@@ -379,7 +381,7 @@ if st.button("生成候选分子"):
             )
 
         if generated_df.empty:
-            st.error("没有生成有效分子。可以尝试提高 temperature、增加生成数量或减少过滤条件。")
+            st.error("未生成有效分子。可以尝试提高 temperature、增加生成数量或减少过滤条件。")
             st.stop()
 
         output_df = prepare_generation_output(generated_df)
@@ -456,7 +458,7 @@ st.header("五、使用已有缓存结果")
 
 st.markdown(
     """
-    如果已经提前完成过一次训练和分子生成，可以直接读取缓存结果。
+    已生成的候选分子结果会自动缓存，可直接加载历史结果进行查看和下载。
     """
 )
 
@@ -518,6 +520,6 @@ if os.path.exists(FULL_OUTPUT_PATH):
                     st.write(row[smiles_col])
 
 else:
-    st.info("目前还没有缓存生成结果。请先训练模型并生成一次候选分子。")
+    st.info("当前暂无历史生成记录，请先完成模型训练并生成候选分子。")
 
 
