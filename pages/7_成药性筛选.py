@@ -387,7 +387,7 @@ st.set_page_config(
 st.title("🧪 成药性筛选")
 
 st.markdown("""
-本页面主要针对候选分子开展早期成药性评估。系统基于 RDKit 计算分子的关键理化参数，
+本模块主要针对候选分子开展早期成药性评估。系统基于 RDKit 计算分子的关键理化参数，
 结合 Lipinski Rule of Five、Veber 经验规则以及 PAINS 结构警示信息，
 对候选分子的类药性特征进行快速筛查。
 """)
@@ -395,25 +395,13 @@ st.markdown("""
 st.info("""
 **成药性评估依据**
 
-本模块不是连续型预测模型，而是围绕小分子药物开发中常用的六项理化指标展开：
+本模块围绕小分子药物开发中常用的六项理化指标展开：
+MolWt < 500 | LogP < 5 | TPSA < 140
+HBD ≤ 5 | HBA ≤ 10 | RotatableBonds < 10
 
-1. MolWt < 500
-2. LogP < 5
-3. TPSA < 140
-4. HBD ≤ 5
-5. HBA ≤ 10
-6. RotatableBonds < 10
+“成药性筛选分数”计算方式为：成药性筛选分数 = 通过规则数 / 6
 
-其中，MolWt、LogP、HBD 和 HBA 主要来源于 Lipinski Rule of Five，
-用于评估化合物的基础类药性特征；TPSA 与 RotatableBonds 则参考 Veber 规则，
-常用于评价分子的口服吸收潜力和生物利用度表现。
-
-为便于不同候选分子之间的横向比较，页面同时保留一个“成药性筛选分数”
-计算方式为：
-成药性筛选分数 = 通过规则数 / 6
-
-规定：
-
+定义：
 - 6/6 条：分数 = 1.00，等级 = 优秀
 - 5/6 条：分数 ≈ 0.83，等级 = 较好
 - 4/6 条：分数 ≈ 0.67，等级 = 中等
@@ -477,7 +465,7 @@ if st.button("开始成药性筛选"):
 
     # ================= 全部性质 =================
 
-    st.subheader("完整属性结果")
+    st.subheader("结果展示")
 
     st.dataframe(
         format_display_df(result_df),
@@ -555,28 +543,18 @@ if st.button("开始成药性筛选"):
 
     # ================= 药物化学解释 =================
 
-    st.subheader("指标说明")
+    st.subheader("指标")
 
     st.info(f"""
 MolWt = {result["MolWt"]}
 
-分子量通常与吸收效率、组织分布及口服利用度相关。
-
 LogP = {result["LogP"]}
-
-LogP 反映分子的脂溶性，对膜通透性和溶解行为有较大影响。
 
 TPSA = {result["TPSA"]}
 
-TPSA 常用于评估分子的极性及跨膜能力。
-
 CNS Permeability = {result["CNS_Permeability"]}
 
-用于反映分子穿越血脑屏障的潜在能力。
-
 PAINS Alert = {result["PAINS_Alert"]}
-
-用于识别可能导致假阳性的结构片段。
 
 通过规则数 = {int(result["passed_rule_count"])} / 6
 
@@ -593,13 +571,13 @@ PAINS Alert = {result["PAINS_Alert"]}
     passed_count = int(result["passed_rule_count"])
 
     if passed_count >= 5:
-        st.success("该分子满足 5 条及以上成药性经验规则，规则型成药性筛选表现较好，可进一步开展 QSAR、分子对接或后续优化分析。")
+        st.success("该分子满足 5 条及以上成药性经验规则，规则型成药性筛选表现较好。")
 
     elif passed_count >= 4:
-        st.warning("该分子满足 4/6 条成药性经验规则，达到基础推荐标准，但仍建议结合 QSAR、分子对接和具体结构特征进一步判断。")
+        st.warning("该分子满足 4/6 条成药性经验规则，达到基础推荐标准，但建议结合 QSAR、分子对接和具体结构特征进一步判断。")
 
     else:
-        st.error("该分子满足的成药性经验规则少于 4 条，建议优先进行结构优化或谨慎推进。")
+        st.error("该分子满足的成药性经验规则少于 4 条，建议优先进行结构优化。")
 
 # ====================== 批量预测 ======================
 
@@ -607,21 +585,21 @@ st.header("批量成药性筛选")
 
 source_mode = st.radio(
     "批量成药性筛选数据来源",
-    ["使用已生成的候选分子集 results/generated_molecules.csv", "手动上传候选分子文件"],
+    ["使用已生成的候选分子集", "手动上传候选分子文件"],
     horizontal=True
 )
 
 df = None
 
-if source_mode == "使用已生成的候选分子集 results/generated_molecules.csv":
+if source_mode == "使用已生成的候选分子集":
     if GENERATED_MOLECULES_PATH.exists():
         df = pd.read_csv(GENERATED_MOLECULES_PATH)
-        st.success(f"已读取已生成候选分子集：{GENERATED_MOLECULES_PATH}")
+        st.success(f"成功读取候选分子集")
     else:
-        st.warning("未找到 results/generated_molecules.csv。请先在“分子生成”页面生成候选分子，或改为手动上传文件。")
+        st.warning("未找到候选分子集。请先在“分子生成”页面生成候选分子，或改为手动上传文件。")
 else:
     uploaded_file = st.file_uploader(
-        "上传包含 smiles 列的 CSV 文件",
+        "上传包含 SMILES 列的 CSV 文件",
         type=["csv"]
     )
 
@@ -633,7 +611,7 @@ else:
 if df is not None:
 
     if "smiles" not in df.columns:
-        st.error("CSV 文件中未检测到 smiles 列。")
+        st.error("CSV 文件中未检测到 SMILES 列。")
         st.stop()
 
     st.success(f"已读取 {len(df)} 条分子记录。")
@@ -673,7 +651,7 @@ if df is not None:
         result_df = clean_druglikeness_output(result_df)
         result_df = add_druglikeness_rule_summary(result_df)
 
-        status_text.success("批量分析完成。")
+        status_text.success("批量分析完成")
 
         st.subheader("批量预测结果")
 
@@ -734,7 +712,7 @@ if df is not None:
         else:
             st.warning("当前批量结果中没有可用于可视化的通过规则数。")
 
-        if source_mode == "使用已生成的候选分子集 results/generated_molecules.csv":
+        if source_mode == "使用已生成的候选分子集":
             result_df.to_csv(
                 GENERATED_ADMET_PATH,
                 index=False,
@@ -745,13 +723,11 @@ if df is not None:
                 index=False,
                 encoding="utf-8-sig"
             )
-            st.success("成药性筛选结果已保存至 results/generated_druglikeness_predictions.csv")
+            st.success("成药性筛选结果已成功保存")
             merged_path = update_generated_screening_results()
             if merged_path is not None:
-                st.success("已同步生成综合筛选结果：results/generated_screening_results.csv")
                 top10_path, top10_df = create_top10_docking_candidates()
                 if top10_path is not None:
-                    st.success("已生成推荐用于分子对接的 Top 10 候选分子：results/top10_docking_candidates.csv")
                     show_top10_docking_candidates("download_top10_docking_after_admet")
                 else:
                     st.warning("综合筛选结果已生成，但暂时无法筛选 Top 10 分子对接候选分子。请检查是否包含 compound_id、smiles、qsar_probability 和成药性筛选分数等列。")
@@ -761,4 +737,4 @@ if df is not None:
                 index=False,
                 encoding="utf-8-sig"
             )
-            st.success("成药性筛选结果已保存至 results/druglikeness_screening_results.csv")
+            st.success("成药性筛选结果已保存")
