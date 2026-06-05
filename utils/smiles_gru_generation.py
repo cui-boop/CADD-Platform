@@ -27,13 +27,29 @@ except Exception:
 
 
 try:
-    if RDKIT_AVAILABLE:
-        from rdkit.Chem import Descriptors, Crippen, Lipinski, rdMolDescriptors, Draw
-    else:
-        Descriptors = Crippen = Lipinski = rdMolDescriptors = Draw = None
-
+    from rdkit.Chem import Descriptors
 except Exception:
-    Descriptors = Crippen = Lipinski = rdMolDescriptors = Draw = None
+    Descriptors = None
+
+try:
+    from rdkit.Chem import Crippen
+except Exception:
+    Crippen = None
+
+try:
+    from rdkit.Chem import Lipinski
+except Exception:
+    Lipinski = None
+
+try:
+    from rdkit.Chem import rdMolDescriptors
+except Exception:
+    rdMolDescriptors = None
+
+try:
+    from rdkit.Chem import Draw
+except Exception:
+    Draw = None
 
 
 PAD_TOKEN = "<PAD>"
@@ -425,29 +441,39 @@ def calc_basic_properties(smiles):
     if can is None:
         return None
 
-    if not RDKIT_AVAILABLE:
+    if not rdkit_available():
         return {
             "smiles": smiles,
             "canonical_smiles": can,
             "valid_smiles": True
         }
 
-    mol = Chem.MolFromSmiles(can)
+    try:
+        from rdkit import Chem
+        from rdkit.Chem import Descriptors, Crippen, Lipinski, rdMolDescriptors
 
-    return {
-        "smiles": smiles,
-        "canonical_smiles": can,
-        "valid_smiles": True,
-        "MolWt": round(Descriptors.MolWt(mol), 3),
-        "LogP": round(Crippen.MolLogP(mol), 3),
-        "TPSA": round(rdMolDescriptors.CalcTPSA(mol), 3),
-        "HBD": int(Lipinski.NumHDonors(mol)),
-        "HBA": int(Lipinski.NumHAcceptors(mol)),
-        "RotatableBonds": int(Lipinski.NumRotatableBonds(mol)),
-        "RingCount": int(Lipinski.RingCount(mol)),
-        "AromaticRings": int(Lipinski.NumAromaticRings(mol)),
-        "HeavyAtomCount": int(Lipinski.HeavyAtomCount(mol))
-    }
+        mol = Chem.MolFromSmiles(can)
+
+        if mol is None:
+            return None
+
+        return {
+            "smiles": smiles,
+            "canonical_smiles": can,
+            "valid_smiles": True,
+            "MolWt": round(Descriptors.MolWt(mol), 3),
+            "LogP": round(Crippen.MolLogP(mol), 3),
+            "TPSA": round(rdMolDescriptors.CalcTPSA(mol), 3),
+            "HBD": int(Lipinski.NumHDonors(mol)),
+            "HBA": int(Lipinski.NumHAcceptors(mol)),
+            "RotatableBonds": int(Lipinski.NumRotatableBonds(mol)),
+            "RingCount": int(Lipinski.RingCount(mol)),
+            "AromaticRings": int(Lipinski.NumAromaticRings(mol)),
+            "HeavyAtomCount": int(mol.GetNumHeavyAtoms())
+        }
+
+    except Exception:
+        return None
 
 
 def generate_smiles_table(
