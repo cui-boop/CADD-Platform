@@ -34,7 +34,7 @@ st.title("🧬 SMILES-GRU 分子生成")
 st.markdown(
     """
     本模块基于 SMILES 序列生成模型开展新分子结构设计。
-    用户可以选择当前平台内置的EGFR ChEMBL 单靶点活性数据或自行上传包含smiles列的文件，
+    用户可以选择当前平台内置的 EGFR ChEMBL 单靶点活性数据或自行上传包含smiles列的文件，
     模型会学习 SMILES 字符串的排列规律，
     然后逐字符采样生成具有相似结构特征的新候选分子。
 
@@ -237,7 +237,7 @@ learning_rate = st.number_input(
 device = "cpu"
 
 if os.path.exists(GENERATOR_MODEL_PATH):
-    st.success(f"已检测到训练好的生成模型：{GENERATOR_MODEL_PATH}")
+    st.success(f"已检测到训练好的生成模型")
 else:
     st.info("当前未发现已训练模型，首次使用请先完成模型训练。")
 
@@ -267,7 +267,7 @@ if st.button("开始训练生成模型", type="primary"):
                 random_state=42
             )
 
-        st.success(f"模型训练完成，训练结果已保存至：{model_path}")
+        st.success(f"模型训练完成，结果已保存")
 
         st.subheader("训练参数与统计信息")
         st.dataframe(
@@ -288,7 +288,7 @@ if st.button("开始训练生成模型", type="primary"):
             encoding="utf-8-sig"
         )
 
-        st.success("训练损失已保存到 results/smiles_gru_training_loss.csv。")
+        st.success("训练损失已保存。")
 
     except Exception as e:
         st.error(f"训练失败：{e}")
@@ -306,7 +306,7 @@ st.markdown(
 )
 
 if not os.path.exists(GENERATOR_MODEL_PATH):
-    st.warning("当前未发现已训练模型。请先训练生成模型，或确认 models/smiles_gru_generator.pt 是否存在。")
+    st.warning("当前未发现已训练模型。请先训练生成模型。")
 else:
     st.success("已检测到训练好的 SMILES-GRU 模型，可以进行分子生成。")
 
@@ -392,11 +392,6 @@ if st.button("生成候选分子"):
         st.dataframe(
             output_df,
             use_container_width=True
-        )
-
-        st.info(
-            f"完整结果已保存到：{full_path}；"
-            f"供后续分子设计模块上传使用的简化文件已保存到：{compatible_path}。"
         )
 
         st.download_button(
