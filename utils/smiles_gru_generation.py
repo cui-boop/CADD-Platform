@@ -578,24 +578,25 @@ def save_generated_molecules(
     return full_output_path, compatible_output_path
 
 
-def get_mol_image(smiles, size=(260, 200)):
+def get_mol_image(smiles, size=(250, 200)):
     """
-    生成 RDKit 分子图片。
+    根据 SMILES 生成分子结构图片。
+
+    如果 RDKit 绘图模块不可用，返回 None，页面会自动显示 SMILES 文本，
+    避免整个 Streamlit 页面报错中断。
     """
-    if not RDKIT_AVAILABLE:
+    try:
+        from rdkit import Chem
+        from rdkit.Chem import Draw
+
+        mol = Chem.MolFromSmiles(str(smiles))
+        if mol is None:
+            return None
+
+        return Draw.MolToImage(
+            mol,
+            size=size
+        )
+
+    except Exception:
         return None
-
-    can = canonicalize_smiles(smiles)
-
-    if can is None:
-        return None
-
-    mol = Chem.MolFromSmiles(can)
-
-    if mol is None:
-        return None
-
-    return Draw.MolToImage(
-        mol,
-        size=size
-    )
