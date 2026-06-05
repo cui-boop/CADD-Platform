@@ -50,7 +50,7 @@ div[data-testid="metric-container"] {
 
 st.title("🎯活性分子预测")
 st.markdown(
-    "基于已完成训练的随机森林 QSAR 模型，对候选分子的潜在活性进行快速评估。既可针对单个分子开展预测，也可对批量候选化合物进行统一筛选与排序。"
+    "本模块基于已完成训练的随机森林 QSAR 模型，对候选分子的潜在活性进行快速评估。既可针对单个分子进行预测，也可对批量候选化合物进行统一筛选与排序。"
 )
 
 
@@ -284,7 +284,7 @@ def run_ketcher(default_smiles):
 
 # ========================= 加载模型 =========================
 if not MODEL_PATH.exists():
-    st.error("未找到 models/qsar_random_forest.pkl。请先在 QSAR 模型训练页面训练模型。")
+    st.error("模型未找到。请先在 QSAR 模型训练页面训练模型。")
     st.stop()
 
 package = joblib.load(MODEL_PATH)
@@ -305,7 +305,6 @@ c2.metric("RDKit 参数", f"{len(desc_names)} 个")
 c3.metric("Morgan 指纹", f"{morgan_bits} bit")
 c4.metric("分类阈值", f"{threshold:.3f}")
 
-st.caption("模型文件：models/qsar_random_forest.pkl")
 st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -315,7 +314,7 @@ tab1, tab2 = st.tabs(["单分子交互预测", "批量候选分子预测"])
 # ========================= 单分子预测 =========================
 with tab1:
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("1. 输入或绘制分子结构")
+    st.subheader("1. 输入或编辑分子结构")
 
     default_smiles = "CCOc1ccc(N)cc1"
 
@@ -391,7 +390,6 @@ with tab1:
         desc_show.columns = ["Descriptor", "Value"]
         st.dataframe(desc_show, use_container_width=True, hide_index=True)
 
-        st.caption("结果已保存：results/single_molecule_prediction.csv")
         st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -402,18 +400,18 @@ with tab2:
 
     source_mode = st.radio(
         "批量预测数据来源",
-        ["使用已生成的候选分子集 results/generated_molecules.csv", "手动上传候选分子文件"],
+        ["使用已生成的候选分子集", "手动上传候选分子文件"],
         horizontal=True,
     )
 
     df = None
 
-    if source_mode == "使用已生成的候选分子集 results/generated_molecules.csv":
+    if source_mode == "使用已生成的候选分子集":
         if GENERATED_MOLECULES_PATH.exists():
             df = pd.read_csv(GENERATED_MOLECULES_PATH)
-            st.success(f"已读取已生成候选分子集：{GENERATED_MOLECULES_PATH}")
+            st.success(f"候选分子集读取成功")
         else:
-            st.warning("未找到 results/generated_molecules.csv。请先在“分子生成”页面生成候选分子，或改为手动上传文件。")
+            st.warning("未找到候选分子集。请先在“分子生成”页面生成候选分子，或改为手动上传文件。")
     else:
         uploaded = st.file_uploader(
             "支持 CSV、TSV、TXT、XLSX，至少包含一列 SMILES",
@@ -431,7 +429,7 @@ with tab2:
         smiles_col = get_auto_smiles_col(df)
 
         if smiles_col is None:
-            st.error("当前候选分子文件中未检测到 smiles 列，请确认文件至少包含 smiles 或 canonical_smiles 列。")
+            st.error("当前候选分子文件中未检测到 SMILES 列，请确认文件至少包含 SMILES 或 canonical_smiles 列。")
             st.stop()
 
         st.metric("候选分子数量", f"{len(df):,}")
@@ -460,13 +458,13 @@ with tab2:
             out_df["qsar_probability"] = out_df["prob_active"]
             out_df["qsar_prediction"] = out_df["prediction"]
 
-            if source_mode == "使用已生成的候选分子集 results/generated_molecules.csv":
+            if source_mode == "使用已生成的候选分子集":
                 out_df.to_csv(GENERATED_QSAR_PATH, index=False, encoding="utf-8-sig")
                 out_df.to_csv(BATCH_PATH, index=False, encoding="utf-8-sig")
-                st.success("批量活性预测完成，结果已保存：results/generated_qsar_predictions.csv")
+                st.success("批量活性预测完成")
             else:
                 out_df.to_csv(BATCH_PATH, index=False, encoding="utf-8-sig")
-                st.success("批量预测完成，结果已保存：results/new_molecule_qsar_prediction.csv")
+                st.success("批量预测完成")
 
             valid = out_df.dropna(subset=["prob_active"]).copy()
 
