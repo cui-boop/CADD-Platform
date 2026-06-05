@@ -23,8 +23,8 @@ st.title("🧹 活性数据整理")
 
 st.markdown(
     """
-    本模块用于整理 ChEMBL 或项目标准格式的化合物活性数据。
-    支持 ChEMBL 原始导出数据及项目标准格式数据，
+    本模块用于整理来自 ChEMBL 数据库的化合物活性数据。
+    支持 ChEMBL 原始数据以及标准化数据的导入，
     自动完成字段识别、活性值转换、pActivity 计算与活性标签划分。
     """
 )
@@ -44,7 +44,7 @@ st.markdown(
 
     Molecule ChEMBL ID ｜ Smiles ｜ Target Name ｜ Standard Type ｜ Standard Value ｜ Standard Units ｜ Standard Relation
 
-    **2. 项目标准化活性数据**
+    **2. 标准化活性数据**
 
     适用于经过预处理或项目内部整理的数据表，
     建议至少包含以下核心字段：
@@ -62,13 +62,13 @@ st.info(
 
     推荐的数据筛选策略如下：
 
-    • Target Type：SINGLE PROTEIN
-    • Organism：Homo sapiens
-    • Standard Type：IC50 或 Ki
-    • Standard Units：nM
-    • Standard Relation：=
-    • Standard Value：> 0
-    • SMILES：Not Null
+    - Target Type：SINGLE PROTEIN
+    - Organism：Homo sapiens
+    - Standard Type：IC50 或 Ki
+    - Standard Units：nM
+    - Standard Relation：=
+    - Standard Value：> 0
+    - SMILES：Not Null
     """
 )
 
@@ -117,9 +117,7 @@ if df is not None:
 
     st.header("四、数据整理参数")
 
-    st.info(
-        "系统会自动识别上传文件是 ChEMBL 原始格式或项目标准格式。"
-    )
+
 
     threshold = st.slider(
         "活性分类阈值：pActivity ≥ 阈值 判定为 Active",
