@@ -82,15 +82,18 @@ def canonicalize_smiles(smiles):
 
     smiles = str(smiles).strip()
 
-    if not RDKIT_AVAILABLE:
-        return smiles
+    try:
+        from rdkit import Chem
 
-    mol = Chem.MolFromSmiles(smiles)
+        mol = Chem.MolFromSmiles(smiles)
 
-    if mol is None:
+        if mol is None:
+            return None
+
+        return Chem.MolToSmiles(mol, canonical=True)
+
+    except Exception:
         return None
-
-    return Chem.MolToSmiles(mol)
 
 
 def load_training_smiles(
@@ -606,24 +609,29 @@ def save_generated_molecules(
 
 def get_mol_image(smiles, size=(250, 200)):
     """
-    根据 SMILES 生成分子结构 SVG。
+    根据 SMILES 生成分子结构图片。
 
-    返回 SVG 字符串；如果失败则返回 None。
+    返回 PIL Image；如果失败则返回 None。
     """
     try:
         from rdkit import Chem
-        from rdkit.Chem.Draw import rdMolDraw2D
+        from rdkit.Chem import Draw
 
-        mol = Chem.MolFromSmiles(str(smiles))
+        can = canonicalize_smiles(smiles)
+
+        if can is None:
+            return None
+
+        mol = Chem.MolFromSmiles(can)
+
         if mol is None:
             return None
 
-        drawer = rdMolDraw2D.MolDraw2DSVG(size[0], size[1])
-        drawer.DrawMolecule(mol)
-        drawer.FinishDrawing()
-        svg = drawer.GetDrawingText()
+        return Draw.MolToImage(
+            mol,
+            size=size
+        )
 
-        return svg
-
-    except Exception:
+    except Exception as e:
+        print(f"[get_mol_image failed] smiles={smiles}, error={e}")
         return None

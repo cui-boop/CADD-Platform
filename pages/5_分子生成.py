@@ -427,84 +427,17 @@ if st.button("生成候选分子"):
             for i, (_, row) in enumerate(show_df.iterrows()):
                 with cols[i % 3]:
                     if smiles_col is not None:
-                        svg = get_mol_image(row[smiles_col])
-                        if svg is not None:
-                            st.markdown(svg, unsafe_allow_html=True)
-                            st.caption(f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}")
+                        img = get_mol_image(row[smiles_col])
+                        if img is not None:
+                            st.image(
+                                img,
+                                caption=f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}",
+                                width=250
+                        )
                         else:
-                            st.write(row[smiles_col])
+                            st.caption("该 SMILES 无法绘制结构图")
+                            st.code(str(row[smiles_col]))
 
     except Exception as e:
         st.error(f"生成失败：{e}")
-
-
-# ============================== 五、使用已有缓存结果 ==============================
-
-st.header("五、使用已有缓存结果")
-
-st.markdown(
-    """
-    已生成的候选分子结果会自动缓存，可直接加载历史结果进行查看和下载。
-    """
-)
-
-if os.path.exists(FULL_OUTPUT_PATH):
-    st.success(f"已检测到缓存生成结果：{FULL_OUTPUT_PATH}")
-
-    cached_df = pd.read_csv(FULL_OUTPUT_PATH)
-    cached_df = prepare_generation_output(cached_df)
-
-    # 如果旧缓存里同时存在 smiles 和 canonical_smiles，自动整理并覆盖为新的统一格式
-    cached_df.to_csv(
-        FULL_OUTPUT_PATH,
-        index=False,
-        encoding="utf-8-sig"
-    )
-
-    st.subheader("缓存生成分子结果")
-    st.dataframe(cached_df, use_container_width=True)
-
-    st.download_button(
-        key="download_cached_gru_generated_molecules",
-        label="下载缓存完整结果 gru_generated_molecules.csv",
-        data=cached_df.to_csv(index=False, encoding="utf-8-sig"),
-        file_name="gru_generated_molecules.csv",
-        mime="text/csv"
-    )
-
-    if os.path.exists(COMPATIBLE_OUTPUT_PATH):
-        simple_df = pd.read_csv(COMPATIBLE_OUTPUT_PATH)
-
-        st.download_button(
-            key="download_cached_generated_molecules",
-            label="下载后续模块输入 generated_molecules.csv",
-            data=simple_df.to_csv(index=False, encoding="utf-8-sig"),
-            file_name="generated_molecules.csv",
-            mime="text/csv"
-        )
-
-    else:
-        st.warning("未找到 results/generated_molecules.csv。可以重新点击“生成候选分子”生成简化文件。")
-
-    smiles_col = get_smiles_column(cached_df)
-
-    if rdkit_available() and smiles_col is not None:
-        st.subheader("缓存分子结构预览")
-
-        show_df = cached_df.head(12)
-        cols = st.columns(3)
-
-        for i, (_, row) in enumerate(show_df.iterrows()):
-            with cols[i % 3]:
-                svg = get_mol_image(row[smiles_col])
-                if svg is not None:
-                    st.markdown(svg, unsafe_allow_html=True)
-                    st.caption(f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}")
-                else:
-                    st.write(row[smiles_col])
-
-else:
-    st.info("当前暂无历史生成记录，请先完成模型训练并生成候选分子。")
-
-
 
