@@ -34,14 +34,12 @@ st.title("💡 基于 Top 10 候选分子的规则驱动分子设计")
 st.markdown(
     """
     本模块用于对推荐进入分子对接的候选分子进行规则驱动结构优化。
-    候选分子可以从默认文件读取、手动输入一条记录，或上传 CSV 文件。
-    页面会按 `compound_id` 自动尝试从 QSAR 活性预测和成药性筛选结果中补充活性概率、预测类别和成药性筛选分数。
     """
 )
 
-st.header("一、读取 Top 10 候选分子")
+st.header("一、读取 Top 10 候选分子的分子对接结果")
 
-with st.expander("候选分子输入格式说明", expanded=True):
+with st.expander("候选分子分子对接结果输入格式说明", expanded=True):
     format_df = pd.DataFrame(
         [
             {"列名": "compound_id", "是否必需": "必需", "含义": "分子编号，必须和生成、QSAR、成药性筛选、docking 结果中的编号一致"},
@@ -53,8 +51,8 @@ with st.expander("候选分子输入格式说明", expanded=True):
     st.dataframe(format_df, use_container_width=True, hide_index=True)
 
 source_mode = st.radio(
-    "请选择候选分子读取方式",
-    ["读取默认 Top 10 文件", "手动输入候选分子信息", "上传候选分子 CSV"],
+    "请选择分子对接结果读取方式",
+    ["读取默认 Top 10 分子对接结果文件", "手动输入分子对接结果", "上传分子对接结果 CSV"],
     horizontal=True,
 )
 
@@ -62,7 +60,6 @@ manual_data = None
 uploaded_file = None
 
 if source_mode == "读取默认 Top 10 文件":
-    st.info(f"默认读取：{TOP10_DOCKING_PATH}")
     mode = "default"
 
 elif source_mode == "手动输入候选分子信息":
@@ -92,7 +89,7 @@ else:
 
 load_clicked = False
 if mode == "default":
-    load_clicked = st.button("读取默认 Top 10 文件", type="primary")
+    load_clicked = st.button("读取文件", type="primary")
 elif mode == "upload":
     load_clicked = st.button("读取上传文件", type="primary")
 elif mode == "manual" and manual_data is not None:
@@ -129,12 +126,11 @@ if "candidate_df_design_v3" not in st.session_state:
 candidate_df = st.session_state["candidate_df_design_v3"]
 source_name = st.session_state.get("source_name_design_v3", "")
 
-st.success(f"已读取候选分子来源：{source_name}")
 
 if DOCKING_RESULTS_PATH.exists():
-    st.success(f"已检测到 docking 结果文件：{DOCKING_RESULTS_PATH}")
+    st.success(f"已检测到 docking 结果文件")
 else:
-    st.warning(f"未检测到默认 docking 结果文件：{DOCKING_RESULTS_PATH}。如果候选输入中已经包含 docking_score，则不影响使用。")
+    st.warning(f"未检测到默认 docking 结果文件。如果候选输入中已经包含 docking_score，则不影响使用。")
 
 if rdkit_available():
     st.success("已检测到 RDKit：可以进行 SMILES 校验、理化性质计算和结构图绘制。")
@@ -257,8 +253,8 @@ if st.button("生成结构优化分子", type="primary"):
         design_df = generate_rule_based_designs(selected_row, max_designs=max_designs, emphasis=emphasis)
         full_path, simple_path = save_designed_molecules(design_df)
 
-        st.success(f"完整设计结果已保存：{full_path}")
-        st.success(f"后续 QSAR / ADMET 再预测输入文件已保存：{simple_path}")
+        st.success(f"完整设计结果已保存")
+        st.success(f"后续 QSAR / ADMET 再预测输入文件已保存")
 
         tab_result, tab_structure, tab_download = st.tabs(["设计结果表", "结构预览", "下载结果"])
 
