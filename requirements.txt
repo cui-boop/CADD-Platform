@@ -5,7 +5,7 @@ scikit-learn
 matplotlib
 plotly
 joblib
-rdkit-pypi
+rdkit==2024.3.5
 streamlit-ketcher
 requests
 torch
