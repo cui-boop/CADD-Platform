@@ -27,9 +27,9 @@ from utils.top10_molecular_design import (
     DOCKING_RESULTS_PATH,
 )
 
-st.set_page_config(page_title="分子设计与结构优化", page_icon="🧩", layout="wide")
+st.set_page_config(page_title="分子设计与结构优化", page_icon="💡", layout="wide")
 
-st.title("🧩 基于 Top 10 候选分子的规则驱动分子设计")
+st.title("💡 基于 Top 10 候选分子的规则驱动分子设计")
 
 st.markdown(
     """
