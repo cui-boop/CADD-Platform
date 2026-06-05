@@ -659,13 +659,3 @@ ADMET evaluation indicated acceptable solubility and moderate CYP3A4 inhibition 
 The quinazoline core may be retained, while polar substituents can be optimized to improve solubility and reduce toxicity.
 """
     return {"title": title, "text": normalize_text(text)}
-
-# ===== 兼容旧页面 =====
-
-search_and_fetch = search_and_fetch_literature
-rule_extract = rule_based_extract
-tables = result_to_tables
-markdown = generate_markdown_summary
-save_outputs = save_extraction_outputs
-save_search = save_literature_outputs
-demo_text = make_demo_text
