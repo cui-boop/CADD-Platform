@@ -427,12 +427,10 @@ if st.button("生成候选分子"):
             for i, (_, row) in enumerate(show_df.iterrows()):
                 with cols[i % 3]:
                     if smiles_col is not None:
-                        img = get_mol_image(row[smiles_col])
-                        if img is not None:
-                            st.image(
-                                img,
-                                caption=f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}"
-                            )
+                        svg = get_mol_image(row[smiles_col])
+                        if svg is not None:
+                            st.markdown(svg, unsafe_allow_html=True)
+                            st.caption(f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}")
                         else:
                             st.write(row[smiles_col])
 
@@ -498,12 +496,10 @@ if os.path.exists(FULL_OUTPUT_PATH):
 
         for i, (_, row) in enumerate(show_df.iterrows()):
             with cols[i % 3]:
-                img = get_mol_image(row[smiles_col])
-                if img is not None:
-                    st.image(
-                        img,
-                        caption=f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}"
-                    )
+                svg = get_mol_image(row[smiles_col])
+                if svg is not None:
+                    st.markdown(svg, unsafe_allow_html=True)
+                    st.caption(f"{row['compound_id']} | LogP={row.get('LogP', 'NA')}")
                 else:
                     st.write(row[smiles_col])
 

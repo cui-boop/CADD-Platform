@@ -606,23 +606,24 @@ def save_generated_molecules(
 
 def get_mol_image(smiles, size=(250, 200)):
     """
-    根据 SMILES 生成分子结构图片。
+    根据 SMILES 生成分子结构 SVG。
 
-    如果 RDKit 绘图模块不可用，返回 None，页面会自动显示 SMILES 文本，
-    避免整个 Streamlit 页面报错中断。
+    返回 SVG 字符串；如果失败则返回 None。
     """
     try:
         from rdkit import Chem
-        from rdkit.Chem import Draw
+        from rdkit.Chem.Draw import rdMolDraw2D
 
         mol = Chem.MolFromSmiles(str(smiles))
         if mol is None:
             return None
 
-        return Draw.MolToImage(
-            mol,
-            size=size
-        )
+        drawer = rdMolDraw2D.MolDraw2DSVG(size[0], size[1])
+        drawer.DrawMolecule(mol)
+        drawer.FinishDrawing()
+        svg = drawer.GetDrawingText()
+
+        return svg
 
     except Exception:
         return None
