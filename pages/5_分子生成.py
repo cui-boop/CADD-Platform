@@ -115,7 +115,7 @@ st.header("二、训练数据配置")
 
 data_source = st.radio(
     "选择训练数据来源",
-    ["使用内置数据", "上传包含 smiles 列的 CSV 文件"],
+    ["使用内置数据", "上传包含 SMILES 列的 CSV 文件"],
     horizontal=True
 )
 
@@ -123,11 +123,11 @@ data_path = DEFAULT_DATA_PATH
 
 if data_source == "使用内置数据":
     if not os.path.exists(DEFAULT_DATA_PATH):
-        st.error("未找到 cleaned_activity.csv，请先完成活性数据整理。")
+        st.error("未找到内置数据，请先完成活性数据整理。")
         st.stop()
 
     preview_df = pd.read_csv(DEFAULT_DATA_PATH)
-    st.success("已读取 cleaned_activity.csv。")
+    st.success("数据读取成功")
 
 else:
     uploaded_file = st.file_uploader(
@@ -136,13 +136,13 @@ else:
     )
 
     if uploaded_file is None:
-        st.info("请先上传包含 smiles 列的 CSV 文件。")
+        st.info("请先上传包含 SMILES 列的 CSV 文件。")
         st.stop()
 
     preview_df = pd.read_csv(uploaded_file)
 
     if "smiles" not in preview_df.columns:
-        st.error("上传文件必须包含 smiles 列。")
+        st.error("上传文件必须包含 SMILES 列。")
         st.stop()
 
     os.makedirs("data", exist_ok=True)
@@ -154,7 +154,7 @@ else:
         encoding="utf-8-sig"
     )
 
-    st.success("上传文件解析完成。")
+    st.success("文件解析完成")
 
 st.subheader("训练数据集预览")
 st.dataframe(preview_df.head(), use_container_width=True)
@@ -175,22 +175,11 @@ else:
 
 st.header("三、训练 SMILES-GRU 生成模型")
 
-st.markdown(
-    """
-    训练任务：给定前面的 SMILES 字符，预测下一个字符。
-    
-    训练完成后模型将自动保存至 `models/smiles_gru_generator.pt`，
-    可用于后续候选分子生成任务。
-
-    如果已经提前训练过模型，直接查看下方“使用已有缓存结果”部分。
-    """
-)
-
 col_a, col_b, col_c = st.columns(3)
 
 with col_a:
     epochs = st.slider(
-        "训练轮数 epochs",
+        "训练轮数",
         min_value=1,
         max_value=50,
         value=10,
@@ -206,7 +195,7 @@ with col_b:
 
 with col_c:
     max_len = st.slider(
-        "最大 SMILES 长度 max_len",
+        "最大 SMILES 长度",
         min_value=40,
         max_value=200,
         value=120,
