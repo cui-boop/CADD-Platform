@@ -34,11 +34,11 @@ st.title("🧬 SMILES-GRU 分子生成")
 st.markdown(
     """
     本模块基于 SMILES 序列生成模型开展新分子结构设计。
-    模型会读取当前项目中的 `cleaned_activity.csv`，学习其中 SMILES 字符串的排列规律，
+    用户可以选择当前平台内置的EGFR ChEMBL 单靶点活性数据或自行上传包含smiles列的文件，
+    模型会学习 SMILES 字符串的排列规律，
     然后逐字符采样生成具有相似结构特征的新候选分子。
 
-    生成结果将自动进行 RDKit 有效性检查、去重和基础理化性质计算，
-    并保存为后续“分子设计与结构优化”、QSAR 活性预测和成药性筛选可使用的候选分子文件。
+    生成结果将自动进行 RDKit 有效性检查、去重和基础理化性质计算。
     """
 )
 
@@ -116,13 +116,13 @@ st.header("二、训练数据配置")
 
 data_source = st.radio(
     "选择训练数据来源",
-    ["使用 cleaned_activity.csv", "上传包含 smiles 列的 CSV 文件"],
+    ["使用内置数据", "上传包含 smiles 列的 CSV 文件"],
     horizontal=True
 )
 
 data_path = DEFAULT_DATA_PATH
 
-if data_source == "使用 cleaned_activity.csv":
+if data_source == "使用内置数据":
     if not os.path.exists(DEFAULT_DATA_PATH):
         st.error("未找到 cleaned_activity.csv，请先完成活性数据整理。")
         st.stop()

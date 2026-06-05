@@ -52,9 +52,9 @@ div[data-testid="metric-container"] {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🌲QSAR 随机森林模型训练")
+
 st.markdown(
-    "本页面使用 **10 个 RDKit 理化参数 + Morgan 指纹** 构建随机森林 QSAR 二分类模型。"
+    "本模块使用 **10 个 RDKit 理化参数和Morgan 指纹** 构建随机森林 QSAR 二分类模型。"
 )
 
 
@@ -621,7 +621,7 @@ if st.button("开始训练随机森林 QSAR 模型", type="primary", use_contain
     fi_df.to_csv(FI_PATH, index=False)
     param_df.to_csv(PARAM_PATH, index=False)
 
-    st.success(f"模型训练完成，已保存到 models/qsar_random_forest.pkl")
+    st.success(f"模型训练完成")
 
     st.subheader("3. 模型评价结果")
 
@@ -645,11 +645,7 @@ if st.button("开始训练随机森林 QSAR 模型", type="primary", use_contain
     st.subheader("4. 结果文件")
     st.dataframe(param_df, use_container_width=True, hide_index=True)
 
-    st.caption(
-        "已保存：models/qsar_random_forest.pkl；"
-        "results/qsar_metrics.csv；results/qsar_predictions.csv；"
-        "results/feature_importance.csv；results/qsar_model_parameters.csv"
-    )
+
 
 else:
     st.info("选择数据文件和模型参数后，点击按钮开始训练。")
