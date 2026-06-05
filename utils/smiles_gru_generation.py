@@ -17,11 +17,23 @@ except Exception:
 
 try:
     from rdkit import Chem
-    from rdkit.Chem import Descriptors, Crippen, Lipinski, rdMolDescriptors, Draw
-    RDKIT_AVAILABLE = True
+
+    test_mol = Chem.MolFromSmiles("CCO")
+    RDKIT_AVAILABLE = test_mol is not None
+
 except Exception:
-    Chem = Descriptors = Crippen = Lipinski = rdMolDescriptors = Draw = None
+    Chem = None
     RDKIT_AVAILABLE = False
+
+
+try:
+    if RDKIT_AVAILABLE:
+        from rdkit.Chem import Descriptors, Crippen, Lipinski, rdMolDescriptors, Draw
+    else:
+        Descriptors = Crippen = Lipinski = rdMolDescriptors = Draw = None
+
+except Exception:
+    Descriptors = Crippen = Lipinski = rdMolDescriptors = Draw = None
 
 
 PAD_TOKEN = "<PAD>"
@@ -34,7 +46,14 @@ def torch_available():
 
 
 def rdkit_available():
-    return RDKIT_AVAILABLE
+    try:
+        from rdkit import Chem
+
+        test_mol = Chem.MolFromSmiles("CCO")
+        return test_mol is not None
+
+    except Exception:
+        return False
 
 
 def canonicalize_smiles(smiles):
