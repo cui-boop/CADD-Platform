@@ -1,10 +1,11 @@
-﻿compound_id,smiles,target,docking_score,hbond_count,hydrophobic_count,pi_pi_count,salt_bridge_count,key_residues,interaction,target_rank,docking_score_norm,interaction_score,docking_confidence,binding_interpretation,optimization_suggestion,overall_rank
-CHEMBL138940,O=C(/C=C/C(=O)Nc1cc2c(Nc3ccc(F)c(Cl)c3)ncnc2cn1)NCCN1CCOCC1,EGFR,-9.5,2,2,1,1,MET793;LYS745;ASP855,H-bond; salt bridge; pi-pi,2,0.9,0.6033,0.7813,CHEMBL138940 与 EGFR 的 docking score 较低，提示其可能具有较好的结合潜力。该分子形成了2 个氢键、2 个疏水相互作用、1 个 π-π 作用、1 个盐桥，说明其结合模式不仅依赖结合能，也具有一定相互作用支撑。关键残基包括：MET793;LYS745;ASP855。,该分子的综合对接置信度较高，建议优先保留核心骨架，并围绕外围取代基进行小幅优化。 盐桥相互作用可能增强结合稳定性，但需要结合 ADMET 结果关注电荷对膜通透性的影响。,1
-CHEMBL53711,CN(C)c1cc2c(Nc3cccc(Br)c3)ncnc2cn1,EGFR,-10.0,1,3,1,0,MET793;LEU718;PHE856,H-bond; hydrophobic; pi-pi,1,1.0,0.3967,0.7587,CHEMBL53711 与 EGFR 的 docking score 较低，提示其可能具有较好的结合潜力。该分子形成了1 个氢键、3 个疏水相互作用、1 个 π-π 作用，说明其结合模式不仅依赖结合能，也具有一定相互作用支撑。关键残基包括：MET793;LEU718;PHE856。,该分子的综合对接置信度较高，建议优先保留核心骨架，并围绕外围取代基进行小幅优化。,2
-CHEMBL138940,O=C(/C=C/C(=O)Nc1cc2c(Nc3ccc(F)c(Cl)c3)ncnc2cn1)NCCN1CCOCC1,HER2,-9.0,2,1,1,0,MET801;LYS753,H-bond; pi-pi,1,0.8,0.3933,0.6373,CHEMBL138940 与 HER2 的 docking score 较低，提示其可能具有较好的结合潜力。该分子形成了2 个氢键、1 个疏水相互作用、1 个 π-π 作用，说明其结合模式不仅依赖结合能，也具有一定相互作用支撑。关键残基包括：MET801;LYS753。,该分子的对接表现中等，可作为备选候选分子，建议结合 ADMET 和 QSAR 结果进一步判断。,3
-CHEMBL3808884,COC(=O)c1cc2cc(NCc3cc(NC(=O)c4cc(-n5cnc(C)c5)cc(C(F)(F)F)c4)ccc3C)ncc2[nH]1,EGFR,-9.2,1,3,0,0,MET793;VAL726;LEU844,H-bond; hydrophobic,3,0.84,0.2967,0.6227,CHEMBL3808884 与 EGFR 的 docking score 较低，提示其可能具有较好的结合潜力。该分子形成了1 个氢键、3 个疏水相互作用，说明其结合模式不仅依赖结合能，也具有一定相互作用支撑。关键残基包括：MET793;VAL726;LEU844。,该分子的对接表现中等，可作为备选候选分子，建议结合 ADMET 和 QSAR 结果进一步判断。 若靶点口袋存在芳香残基，可考虑保留或优化芳香环以增强 π-π 堆积。,4
-CHEMBL53711,CN(C)c1cc2c(Nc3cccc(Br)c3)ncnc2cn1,HER2,-8.7,1,2,1,0,MET801;LEU785,H-bond; hydrophobic,2,0.74,0.3367,0.5787,CHEMBL53711 与 HER2 的 docking score 处于中等偏好范围，具有一定结合可能。该分子形成了1 个氢键、2 个疏水相互作用、1 个 π-π 作用，说明其结合模式不仅依赖结合能，也具有一定相互作用支撑。关键残基包括：MET801;LEU785。,该分子的对接表现中等，可作为备选候选分子，建议结合 ADMET 和 QSAR 结果进一步判断。,5
-CHEMBL3808884,COC(=O)c1cc2cc(NCc3cc(NC(=O)c4cc(-n5cnc(C)c5)cc(C(F)(F)F)c4)ccc3C)ncc2[nH]1,HER2,-8.1,1,2,0,0,MET801;VAL734,H-bond; hydrophobic,3,0.62,0.2367,0.4667,CHEMBL3808884 与 HER2 的 docking score 处于中等偏好范围，具有一定结合可能。该分子形成了1 个氢键、2 个疏水相互作用，说明其结合模式不仅依赖结合能，也具有一定相互作用支撑。关键残基包括：MET801;VAL734。,该分子的对接置信度较低，建议谨慎作为优先候选，可考虑重新优化结构或检查对接构象。 若靶点口袋存在芳香残基，可考虑保留或优化芳香环以增强 π-π 堆积。,6
-CHEMBL3808884,COC(=O)c1cc2cc(NCc3cc(NC(=O)c4cc(-n5cnc(C)c5)cc(C(F)(F)F)c4)ccc3C)ncc2[nH]1,BACE1,-6.5,1,1,0,0,ASP32,H-bond,1,0.3,0.1767,0.2507,CHEMBL3808884 与 BACE1 的 docking score 相对较高，结合稳定性可能有限。该分子形成了1 个氢键、1 个疏水相互作用，说明其结合模式不仅依赖结合能，也具有一定相互作用支撑。关键残基包括：ASP32。,该分子的对接置信度较低，建议谨慎作为优先候选，可考虑重新优化结构或检查对接构象。 若靶点口袋存在芳香残基，可考虑保留或优化芳香环以增强 π-π 堆积。,7
-CHEMBL53711,CN(C)c1cc2c(Nc3cccc(Br)c3)ncnc2cn1,BACE1,-6.2,0,1,0,0,VAL69,weak hydrophobic,2,0.24,0.06,0.168,CHEMBL53711 与 BACE1 的 docking score 相对较高，结合稳定性可能有限。该分子形成了1 个疏水相互作用，说明其结合模式不仅依赖结合能，也具有一定相互作用支撑。关键残基包括：VAL69。,该分子的对接置信度较低，建议谨慎作为优先候选，可考虑重新优化结构或检查对接构象。 当前未记录氢键，可考虑在不显著增加 TPSA 的前提下引入合适的氢键供体或受体。 若靶点口袋存在芳香残基，可考虑保留或优化芳香环以增强 π-π 堆积。,8
-CHEMBL138940,O=C(/C=C/C(=O)Nc1cc2c(Nc3ccc(F)c(Cl)c3)ncnc2cn1)NCCN1CCOCC1,BACE1,-5.8,0,1,0,0,ILE118,weak hydrophobic,3,0.16,0.06,0.12,CHEMBL138940 与 BACE1 的 docking score 相对较高，结合稳定性可能有限。该分子形成了1 个疏水相互作用，说明其结合模式不仅依赖结合能，也具有一定相互作用支撑。关键残基包括：ILE118。,该分子的对接置信度较低，建议谨慎作为优先候选，可考虑重新优化结构或检查对接构象。 当前未记录氢键，可考虑在不显著增加 TPSA 的前提下引入合适的氢键供体或受体。 若靶点口袋存在芳香残基，可考虑保留或优化芳香环以增强 π-π 堆积。,9
+compound_id,smiles,target,docking_score
+GRU_GEN_0005,Cc1nc(F)ccc1[C@H](Nc1cc(Cl)c2ncc(C#N)c(Nc3ccc(F)c(Cl)c3)c2c1)C1=CN(C2(C(F)(F)F)CC2)NN1,EGFR,-9.982
+GRU_GEN_0026,CC(C)(C)CNc1c(C#N)cnc2c(Cl)cc(N[C@H](C3=CN(C4(C(F)(F)F)CC4)NN3)c3cccnc3)cc12,EGFR,-8.958
+GRU_GEN_0023,C=CC(=O)Nc1cc(Nc2ncc(Cl)c(Nc3ccccc3P(C)(C)=O)n2)c(OC)cc1N1CCN(C)CC1,EGFR,-8.749
+GRU_GEN_0048,COc1cc(N2CCC(N(C)C)CC2)ccc1Nc1ncc(Br)c(Nc2ccccc2NS(C)(=O)=O)n1,EGFR,-8.24
+GRU_GEN_0050,COc1cc2ncnc(Nc3ccc(F)c(Cl)c3)c2cc1NC(=O)/C=C/CN(C)C(F)(F)F,EGFR,-8.156
+GRU_GEN_0020,CCC(=O)Nc1cc2c(Nc3ccc(Cl)cc3F)ncnc2cc1OCCCN1CCOCC1,EGFR,-7.978
+GRU_GEN_0011,COc1cc2c(Nc3cccc(Cl)c3F)ncnc2cc1OCCCCCO,EGFR,-7.628
+GRU_GEN_0015,COCCOc1cc2c(Nc3ccc(F)c(Cl)c3)ncnc2cc1OC,EGFR,-7.616
+GRU_GEN_0013,COc1cc2ncnc(Nc3cccc(Cl)c3F)c2cc1OCCCCCC(=O)O,EGFR,-7.589
+GRU_GEN_0041,C=CC(=O)Nc1cc2c(Nc3ccc(F)c(Cl)c3)ncnc2cc1OCCNC(=O)COC,EGFR,-7.56
