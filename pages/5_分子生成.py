@@ -101,10 +101,25 @@ with col1:
         st.code("python -m pip install torch", language="powershell")
 
 with col2:
-    if rdkit_available():
-        st.success("已检测到 RDKit：可进行分子结构解析、有效性验证及性质计算。")
-    else:
+    import importlib.util
+
+    st.write("Python 版本：", sys.version)
+    st.write("RDKit 查找结果：", importlib.util.find_spec("rdkit"))
+
+    try:
+        import rdkit
+        from rdkit import Chem
+
+        test_mol = Chem.MolFromSmiles("CCO")
+
+        if test_mol is None:
+            raise RuntimeError("RDKit 已导入，但测试 SMILES 解析失败。")
+
+        st.success(f"已检测到 RDKit：版本 {rdkit.__version__}，可进行分子结构解析、有效性验证及性质计算。")
+
+    except Exception as e:
         st.warning("未检测到 RDKit：模型仍可完成字符串生成，但无法进行严格的化学结构有效性校验。")
+        st.exception(e)
 
 if not torch_available():
     st.stop()
