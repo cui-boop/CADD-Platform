@@ -23,10 +23,11 @@ from sklearn.metrics import (
 
 # ========================= 页面配置 =========================
 st.set_page_config(
-    page_title="QSAR模型训练", 
+    page_title="模型训练", 
     page_icon="🤖", 
     layout="wide"
 )
+st.title("🤖 模型训练")
 
 st.markdown("""
 <style>
