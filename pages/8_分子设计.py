@@ -29,7 +29,7 @@ from utils.top10_molecular_design import (
 
 st.set_page_config(page_title="分子设计与结构优化", page_icon="💡", layout="wide")
 
-st.title("💡 基于 Top 10 候选分子Docking的规则驱动分子设计")
+st.title("💡 基于 Top 10 候选分子的规则驱动分子设计")
 
 st.markdown(
     """
@@ -37,32 +37,33 @@ st.markdown(
     """
 )
 
-st.header("一、读取 Top 10 候选分子的Docking结果")
+st.header("一、读取 Top 10 候选分子docking文件")
 
-with st.expander("Docking结果输入格式说明", expanded=True):
+with st.expander("候选分子输入格式说明", expanded=True):
     format_df = pd.DataFrame(
         [
-            {"列名": "compound_id", "是否必需": "必需", "含义": "分子编号，必须和生成、QSAR、成药性筛选、Docking 结果中的编号一致"},
+            {"列名": "compound_id", "是否必需": "必需", "含义": "分子编号，必须和生成、QSAR、成药性筛选、docking 结果中的编号一致"},
             {"列名": "smiles", "是否必需": "建议必需", "含义": "小分子 SMILES，用于展示、结构绘图和规则优化"},
             {"列名": "target", "是否必需": "必需", "含义": "对接靶点，例如 EGFR"},
-            {"列名": "docking_score", "是否必需": "必需", "含义": "Docking得分，通常越低越好"},
+            {"列名": "docking_score", "是否必需": "必需", "含义": "分子对接得分，通常越低越好"},
         ]
     )
     st.dataframe(format_df, use_container_width=True, hide_index=True)
 
 source_mode = st.radio(
-    "请选择Docking结果读取方式",
-    ["读取默认 Top 10 候选分子Docking结果文件", "手动输入候选分子Docking结果信息", "上传候选分子Docking结果 CSV"],
+    "请选择候选分子读取方式",
+    ["读取默认 Top 10 docking文件", "手动输入候选分子docking信息", "上传候选分子docking CSV"],
     horizontal=True,
 )
 
 manual_data = None
 uploaded_file = None
 
-if source_mode == "读取默认 Top 10 文件":
+if source_mode == "读取默认 Top 10 docking文件":
+    st.info(f"默认读取Top 10 docking文件")
     mode = "default"
 
-elif source_mode == "手动输入候选分子信息":
+elif source_mode == "手动输入候选分子docking信息":
     mode = "manual"
     with st.form("manual_candidate_form"):
         c1, c2 = st.columns(2)
@@ -89,7 +90,7 @@ else:
 
 load_clicked = False
 if mode == "default":
-    load_clicked = st.button("读取默认 Top 10 文件", type="primary")
+    load_clicked = st.button("读取默认 Top 10 docking文件", type="primary")
 elif mode == "upload":
     load_clicked = st.button("读取上传文件", type="primary")
 elif mode == "manual" and manual_data is not None:
@@ -126,11 +127,12 @@ if "candidate_df_design_v3" not in st.session_state:
 candidate_df = st.session_state["candidate_df_design_v3"]
 source_name = st.session_state.get("source_name_design_v3", "")
 
+st.success(f"已读取候选分子来源")
 
 if DOCKING_RESULTS_PATH.exists():
-    st.success(f"已检测到 Docking 结果文件")
+    st.success(f"已检测到 docking 结果文件")
 else:
-    st.warning(f"未检测到默认 Docking 结果文件。如果候选输入中已经包含 docking_score，则不影响使用。")
+    st.warning(f"未检测到默认 docking 结果文件。如果候选输入中已经包含 docking_score，则不影响使用。")
 
 if rdkit_available():
     st.success("已检测到 RDKit：可以进行 SMILES 校验、理化性质计算和结构图绘制。")
@@ -211,7 +213,6 @@ with left:
     st.write(f"**Rank：** {selected_row.get('rank_for_docking')}")
     st.write(f"**compound_id：** {selected_row.get('compound_id')}")
     st.write(f"**SMILES：** `{selected_row.get('smiles')}`")
-    st.write(f"**对接靶点：** {selected_row.get('target', '')}")
     st.write(f"**docking score：** {selected_row.get('docking_score')}")
     st.write(f"**QSAR Active 概率：** {selected_row.get('qsar_probability')}")
     st.write(f"**QSAR 预测类别：** {selected_row.get('qsar_prediction')}")
@@ -244,7 +245,7 @@ with p2:
 st.markdown(
     """
     当前规则主要包括：卤素替换、芳香环小取代基引入、降低强疏水基团、缩短部分侧链等。
-    生成的结构是后续再预测候选分子，需要重新进行 QSAR、ADMET 以及 docking 结果分析。
+    生成的结构需要重新进行 QSAR、ADMET 以及 docking 结果分析。
     """
 )
 
@@ -326,7 +327,7 @@ if st.button("生成结构优化分子", type="primary"):
 
         with tab_download:
             st.download_button(
-                "📥 下载完整完整设计结果",
+                "📥 下载完整 designed_molecules.csv",
                 data=design_df.to_csv(index=False, encoding="utf-8-sig"),
                 file_name="designed_molecules.csv",
                 mime="text/csv",
@@ -339,13 +340,16 @@ if st.button("生成结构优化分子", type="primary"):
                 columns={"designed_compound_id": "compound_id", "designed_smiles": "smiles"}
             )
             st.download_button(
-                "📥 下载后续 QSAR / ADMET 再预测输入文件",
+                "📥 下载 designed_molecules_for_prediction.csv",
                 data=simple_df.to_csv(index=False, encoding="utf-8-sig"),
                 file_name="designed_molecules_for_prediction.csv",
                 mime="text/csv",
                 use_container_width=True,
             )
-
+            st.info(
+                "下一步：将结果文件重新送入活性预测和成药性筛选模块，"
+                "比较设计前后的 QSAR 概率、成药性筛选分数、docking score 和关键理化性质。"
+            )
 
     except Exception as e:
         st.error(f"分子设计失败：{e}")
