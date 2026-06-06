@@ -37,7 +37,7 @@ st.markdown(
     """
 )
 
-st.header("一、读取 Top 10 候选分子docking文件")
+st.header("一、读取 Top 10 候选分子docking结果文件")
 
 with st.expander("候选分子输入格式说明", expanded=True):
     format_df = pd.DataFrame(
@@ -52,18 +52,18 @@ with st.expander("候选分子输入格式说明", expanded=True):
 
 source_mode = st.radio(
     "请选择候选分子读取方式",
-    ["读取默认 Top 10 docking文件", "手动输入候选分子docking信息", "上传候选分子docking CSV"],
+    ["读取默认 Top 10 docking结果文件", "手动输入候选分子docking结果", "上传候选分子docking结果 CSV"],
     horizontal=True,
 )
 
 manual_data = None
 uploaded_file = None
 
-if source_mode == "读取默认 Top 10 docking文件":
-    st.info(f"默认读取Top 10 docking文件")
+if source_mode == "读取默认 Top 10 docking结果文件":
+    st.info(f"默认读取Top 10 docking结果文件")
     mode = "default"
 
-elif source_mode == "手动输入候选分子docking信息":
+elif source_mode == "手动输入候选分子docking结果":
     mode = "manual"
     with st.form("manual_candidate_form"):
         c1, c2 = st.columns(2)
