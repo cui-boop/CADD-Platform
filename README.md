@@ -79,7 +79,7 @@
 
     CADD-Platform/
     │
-    ├── 首页.py
+    ├── app.py
     ├── README.md
     ├── requirements.txt
     │
@@ -126,7 +126,7 @@
 
 在项目根目录下运行：
 
-    streamlit run 首页.py
+    streamlit run appp.py
 
 运行后，浏览器会自动打开本地网站。
 
