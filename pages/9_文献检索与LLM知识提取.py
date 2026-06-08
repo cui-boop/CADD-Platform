@@ -21,12 +21,12 @@ from utils.knowledge_search_extraction import (
 
 
 st.set_page_config(
-    page_title="文献检索与 LLM 知识提取",
+    page_title="文献检索与知识提取",
     page_icon="📚",
     layout="wide"
 )
 
-st.title("📚 文献检索与 LLM 知识提取")
+st.title("📚 文献检索与知识提取")
 
 st.markdown("""
 本模块用于从关键词检索 PubMed 文献，并从标题、摘要或 PMC 全文中提取 CADD 相关知识。
