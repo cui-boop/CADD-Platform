@@ -183,14 +183,16 @@ with col_a:
         min_value=1,
         max_value=50,
         value=10,
-        step=1
+        step=1,
+        help="轮数越多，学习越充分，但也更耗时，过高可能过拟合。"
     )
 
 with col_b:
     batch_size = st.selectbox(
         "batch_size",
         [16, 32, 64, 128],
-        index=2
+        index=2,
+        help="每次送入模型训练的 SMILES 数量。越大训练越稳定，但占用内存更多。"
     )
 
 with col_c:
@@ -199,7 +201,8 @@ with col_c:
         min_value=40,
         max_value=200,
         value=120,
-        step=10
+        step=10,
+        help="训练时保留的 SMILES 最大字符长度，超过这个长度的分子会被截断或过滤。"
     )
 
 col_d, col_e, col_f = st.columns(3)
@@ -208,21 +211,24 @@ with col_d:
     embedding_dim = st.selectbox(
         "embedding_dim",
         [32, 64, 128],
-        index=1
+        index=1,
+        help="每个 SMILES 字符被转换成向量后的维度。可以理解为字符表示的复杂度。"
     )
 
 with col_e:
     hidden_dim = st.selectbox(
         "hidden_dim",
         [64, 128, 256],
-        index=1
+        index=1,
+        help="GRU 隐藏层维度，决定模型记忆和学习序列规律的能力。越大模型表达能力越强，但也更容易过拟合。"
     )
 
 with col_f:
     num_layers = st.selectbox(
         "GRU 层数",
         [1, 2, 3],
-        index=1
+        index=1,
+        help="GRU 网络堆叠的层数。层数越多，模型可以学习更复杂的 SMILES 序列模式。"
     )
 
 learning_rate = st.number_input(
@@ -231,7 +237,8 @@ learning_rate = st.number_input(
     max_value=0.01,
     value=0.001,
     step=0.0001,
-    format="%.4f"
+    format="%.4f",
+    help="学习率，控制模型每次参数更新的步长。太大可能不稳定，太小训练会很慢。"
 )
 
 device = "cpu"
